@@ -36,8 +36,8 @@ export default function TaskModal({
   const [icon, setIcon] = useState<TaskIconName>(DEFAULT_ICON);
   /** null이면 '테마 기본' — 저장할 때 현재 --accent 값으로 굳는다. */
   const [color, setColor] = useState<string | null>(null);
-  /** 삭제 버튼을 한 번 누른 상태. 한 번 더 눌러야 실제로 지운다. */
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  /** 삭제 확인 모달이 떠 있는지 */
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
 
   const editing = task !== null;
@@ -49,18 +49,21 @@ export default function TaskModal({
     setDueDate(task?.due_date ?? "");
     setIcon(toIconName(task?.icon));
     setColor(task?.icon_color ?? null);
-    setConfirmDelete(false);
+    setConfirmOpen(false);
     titleRef.current?.focus();
   }, [open, task]);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      // 확인 모달이 떠 있으면 그것만 닫는다.
+      if (confirmOpen) setConfirmOpen(false);
+      else onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, confirmOpen, onClose]);
 
   if (!open) return null;
 
@@ -93,9 +96,29 @@ export default function TaskModal({
         aria-labelledby="task-modal-title"
         className="w-full max-w-[380px] rounded-2xl border border-line bg-card p-6 shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)]"
       >
-        <h2 id="task-modal-title" className="text-[16px] font-medium">
-          {editing ? "할 일 수정" : "할 일 추가"}
-        </h2>
+        <div className="flex items-center">
+          <h2 id="task-modal-title" className="text-[16px] font-medium">
+            {editing ? "할 일 수정" : "할 일 추가"}
+          </h2>
+
+          {editing && (
+            <button
+              type="button"
+              onClick={() => setConfirmOpen(true)}
+              aria-label="할 일 삭제"
+              title="삭제"
+              className="-mr-1 ml-auto grid size-8 place-items-center rounded-full text-ink-faint transition hover:bg-soft hover:text-accent-deep"
+            >
+              <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path
+                  d="M4 7h16M9.5 4.5h5M6.5 7l.8 12.2h9.4L17.5 7M10 10.5v6M14 10.5v6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          )}
+        </div>
 
         {/*
           섹션 간격은 여기 space-y 한 곳에서만 준다.
@@ -182,33 +205,11 @@ export default function TaskModal({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {editing && (
-              // 실수 방지: 한 번 누르면 버튼 문구가 확인으로 바뀌고, 한 번 더 눌러야 지운다.
-              <button
-                type="button"
-                onClick={() => {
-                  if (!confirmDelete) {
-                    setConfirmDelete(true);
-                    return;
-                  }
-                  onDelete(task);
-                }}
-                disabled={saving}
-                className={`rounded-full px-3 py-2.5 text-[13px] transition disabled:opacity-40 ${
-                  confirmDelete
-                    ? "text-accent-deep underline underline-offset-2"
-                    : "text-ink-faint hover:text-ink-soft"
-                }`}
-              >
-                {confirmDelete ? "삭제할까요?" : "삭제"}
-              </button>
-            )}
-
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="ml-auto flex-1 rounded-full border border-line py-2.5 text-[13px] text-ink-soft transition hover:bg-soft"
+              className="flex-1 rounded-full border border-line py-2.5 text-[13px] text-ink-soft transition hover:bg-soft"
             >
               취소
             </button>
@@ -222,6 +223,49 @@ export default function TaskModal({
           </div>
         </div>
       </form>
+
+      {confirmOpen && task && (
+        // 수정 모달 위에 겹쳐 띄운다. 바깥을 누르거나 Esc를 누르면 이것만 닫힌다.
+        <div
+          className="fixed inset-0 z-[60] grid place-items-center bg-ink/25 p-4"
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            if (e.target === e.currentTarget) setConfirmOpen(false);
+          }}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="task-delete-title"
+            className="w-full max-w-[300px] rounded-2xl border border-line bg-card p-6 shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)]"
+          >
+            <p id="task-delete-title" className="text-center text-[15px] font-medium">
+              삭제할까요?
+            </p>
+            <p className="mt-2 break-keep text-center text-[12px] leading-relaxed text-ink-soft">
+              &lsquo;{task.title}&rsquo; 은(는) 되돌릴 수 없어요.
+            </p>
+
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmOpen(false)}
+                className="flex-1 rounded-full border border-line py-2.5 text-[13px] text-ink-soft transition hover:bg-soft"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(task)}
+                disabled={saving}
+                className="flex-1 rounded-full bg-accent-deep py-2.5 text-[13px] font-medium text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                삭제하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
