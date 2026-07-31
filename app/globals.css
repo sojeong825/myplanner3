@@ -1,26 +1,163 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * 테마는 루트 CSS 변수만 갈아끼우는 방식이다.
+ * 컴포넌트는 canvas / card / ink / soft / accent 같은 의미 이름만 쓰므로,
+ * 버튼·토글·오늘 표시처럼 색이 찍히는 자리는 전부 --accent를 참조한다.
+ * 아래 프리셋을 추가하는 것만으로 전체 화면에 적용된다.
+ *
+ * 라이트 전용 디자인이라 prefers-color-scheme 분기는 두지 않는다.
+ */
+:root,
+:root[data-theme="pink"] {
+  --bg-gradient: linear-gradient(180deg, #faeff2 0%, #ffffff 45%, #fbf4ef 100%);
+  --canvas: #f7f4f4;
+  --card: #ffffff;
+  --line: #f1e7e7;
+  --line-soft: #f7f0f0;
+
+  --ink: #5c4a47;
+  --ink-mid: #82706c;
+  --ink-soft: #a08e8a;
+  --ink-faint: #cbbcb8;
+
+  --soft: #f9ecec;
+  --soft-deep: #f4e0e1;
+
+  --accent: #e5aab0;
+  --accent-deep: #d18b93;
 }
 
+:root[data-theme="lavender"] {
+  --bg-gradient: linear-gradient(180deg, #f4f1fb 0%, #ffffff 45%, #fdf3f6 100%);
+  --canvas: #f6f4f9;
+  --card: #ffffff;
+  --line: #eae5f1;
+  --line-soft: #f2eef8;
+
+  --ink: #514a5f;
+  --ink-mid: #736a83;
+  --ink-soft: #948ba5;
+  --ink-faint: #c0b8ce;
+
+  --soft: #efeaf7;
+  --soft-deep: #e2daef;
+
+  --accent: #ada0d9;
+  --accent-deep: #8f82c5;
+}
+
+:root[data-theme="mint"] {
+  --bg-gradient: linear-gradient(180deg, #eef7f2 0%, #ffffff 45%, #f0f6fb 100%);
+  --canvas: #f1f7f4;
+  --card: #ffffff;
+  --line: #e0eee8;
+  --line-soft: #edf6f2;
+
+  --ink: #3f564d;
+  --ink-mid: #5e7a70;
+  --ink-soft: #849f95;
+  --ink-faint: #b1c7bf;
+
+  --soft: #e5f2ec;
+  --soft-deep: #d3e9e0;
+
+  --accent: #7cc4ab;
+  --accent-deep: #58a88d;
+}
+
+:root[data-theme="cream"] {
+  --bg-gradient: linear-gradient(180deg, #fbf6ea 0%, #ffffff 45%, #faf1ef 100%);
+  --canvas: #faf6ee;
+  --card: #ffffff;
+  --line: #f0e6d6;
+  --line-soft: #f7f0e5;
+
+  --ink: #5a4e3b;
+  --ink-mid: #7c6e57;
+  --ink-soft: #a29379;
+  --ink-faint: #c9bea7;
+
+  --soft: #f7eede;
+  --soft-deep: #eee1ca;
+
+  --accent: #ddb673;
+  --accent-deep: #c39a54;
+}
+
+:root[data-theme="gray"] {
+  --bg-gradient: linear-gradient(180deg, #f2f3f6 0%, #ffffff 45%, #f5f3f1 100%);
+  --canvas: #f5f5f7;
+  --card: #ffffff;
+  --line: #e7e7ea;
+  --line-soft: #f0f0f3;
+
+  --ink: #494950;
+  --ink-mid: #6a6a73;
+  --ink-soft: #8f8f9a;
+  --ink-faint: #bbbbc4;
+
+  --soft: #eeeef2;
+  --soft-deep: #dfdfe6;
+
+  --accent: #9797a4;
+  --accent-deep: #7a7a88;
+}
+
+/* inline이라 유틸리티가 값을 복사하지 않고 var()를 그대로 참조한다 → 테마 교체가 즉시 반영됨 */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-canvas: var(--canvas);
+  --color-card: var(--card);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+
+  --color-ink: var(--ink);
+  --color-ink-mid: var(--ink-mid);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+
+  --color-soft: var(--soft);
+  --color-soft-deep: var(--soft-deep);
+
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+
+  --font-sans: var(--font-noto-kr), "Malgun Gothic", -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --radius-card: 1rem;
+
+  /* 배경 그라데이션 중간이 흰색이라, 흰 카드가 묻히지 않게 살짝 띄운다. */
+  --shadow-card: 0 1px 2px rgba(90, 78, 76, 0.04), 0 10px 26px -14px rgba(90, 78, 76, 0.18);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+}
+
+/*
+ * 배경은 body 한 곳에서만 칠한다.
+ * - background-color가 아니라 background(-image): 그라데이션은 색이 아니라 이미지라
+ *   background-color로 넣으면 조용히 무시된다.
+ * - fixed: 스크롤해도 그라데이션이 따라 늘어나지 않고 화면에 고정된다.
+ * 최상위 래퍼(app/page.tsx의 div)에는 배경을 주지 않아야 이게 가려지지 않는다.
+ */
+body {
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+/* 얇고 연한 스크롤바 — 카드 안에서 튀지 않게 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+/* 날짜 입력의 기본 달력 아이콘을 톤에 맞게 흐리게 */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.45;
+  cursor: pointer;
 }

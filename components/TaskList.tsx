@@ -1,0 +1,105 @@
+"use client";
+
+import type { Task } from "@/lib/types";
+
+type Props = {
+  pending: Task[];
+  done: Task[];
+  onToggle: (task: Task) => void;
+  onAdd: () => void;
+};
+
+function Row({ task, onToggle }: { task: Task; onToggle: (t: Task) => void }) {
+  return (
+    <li>
+      {/* 보더·그림자 없이 여백만으로 구분한다. hover 때만 아주 옅게 톤이 바뀐다. */}
+      <label className="flex cursor-pointer items-center gap-2.5 rounded-[10px] bg-card px-3 py-2.5 transition hover:bg-canvas">
+        <input
+          type="checkbox"
+          checked={task.is_done}
+          onChange={() => onToggle(task)}
+          className="peer sr-only"
+        />
+        <span
+          className={`grid size-4 shrink-0 place-items-center rounded-[5px] border transition ${
+            task.is_done ? "border-accent bg-accent" : "border-soft-deep bg-card"
+          }`}
+        >
+          {task.is_done && (
+            <svg viewBox="0 0 24 24" className="size-3 text-white" fill="none" stroke="currentColor" strokeWidth="3.5">
+              <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </span>
+
+        <span
+          className={`truncate text-[13px] ${
+            task.is_done ? "text-ink-faint line-through" : "text-ink"
+          }`}
+          title={task.title}
+        >
+          {task.title}
+        </span>
+
+        {task.due_date && (
+          <span
+            className={`ml-auto shrink-0 font-mono text-[11px] ${
+              task.is_done ? "text-ink-faint" : "text-ink-soft"
+            }`}
+          >
+            {task.due_date.slice(5).replace("-", "/")}
+          </span>
+        )}
+      </label>
+    </li>
+  );
+}
+
+export default function TaskList({ pending, done, onToggle, onAdd }: Props) {
+  const empty = pending.length === 0 && done.length === 0;
+
+  return (
+    <section className="flex min-h-0 flex-1 flex-col rounded-card border border-line bg-card p-5 shadow-card">
+      <div className="flex items-center px-1">
+        <h2 className="text-[14px] font-medium">할 일</h2>
+        <button
+          type="button"
+          onClick={onAdd}
+          aria-label="할 일 추가"
+          className="ml-auto grid size-6 place-items-center rounded-full bg-accent text-white transition hover:bg-accent-deep"
+        >
+          <svg viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="3">
+            <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
+
+      {empty ? (
+        <p className="px-1 py-8 text-center text-[12px] text-ink-faint">
+          아직 할 일이 없어요. + 를 눌러 추가해보세요.
+        </p>
+      ) : (
+        <div className="mt-3 flex min-h-0 flex-1 flex-col gap-4 -mx-1 overflow-y-auto px-1">
+          {pending.length > 0 && (
+            <ul className="flex flex-col gap-2">
+              {pending.map((task) => (
+                <Row key={task.id} task={task} onToggle={onToggle} />
+              ))}
+            </ul>
+          )}
+
+          {done.length > 0 && (
+            <div>
+              <p className="px-1 pb-1.5 text-[11px] text-ink-faint">완료 {done.length}</p>
+              <ul className="flex flex-col gap-2">
+                {done.map((task) => (
+                  <Row key={task.id} task={task} onToggle={onToggle} />
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
