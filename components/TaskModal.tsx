@@ -81,101 +81,107 @@ export default function TaskModal({ open, saving, onClose, onSubmit }: Props) {
           할 일 추가
         </h2>
 
-        <label className="mt-5 block">
-          <span className="text-[12px] text-ink-soft">
-            할 일 이름 <span className="text-accent-deep">*</span>
-          </span>
-          <input
-            ref={titleRef}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="예) 방청소하기"
-            maxLength={120}
-            className="mt-1.5 w-full rounded-lg border border-line bg-canvas px-3 py-2.5 text-[14px] outline-none placeholder:text-ink-faint focus:border-accent"
-          />
-        </label>
+        {/*
+          섹션 간격은 여기 space-y 한 곳에서만 준다.
+          각 섹션에 margin을 따로 붙이면 필드를 추가할 때 간격이 어긋난다.
+        */}
+        <div className="mt-5 space-y-5">
+          <label className="block">
+            <span className="text-[12px] text-ink-soft">
+              할 일 이름 <span className="text-accent-deep">*</span>
+            </span>
+            <input
+              ref={titleRef}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="예) 방청소하기"
+              maxLength={120}
+              className="mt-1.5 w-full rounded-lg border border-line bg-canvas px-3 py-2.5 text-[14px] outline-none placeholder:text-ink-faint focus:border-accent"
+            />
+          </label>
 
-        <label className="mt-4 block">
-          <span className="text-[12px] text-ink-soft">마감일 (선택)</span>
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className="mt-1.5 w-full rounded-lg border border-line bg-canvas px-3 py-2.5 text-[14px] outline-none focus:border-accent"
-          />
-        </label>
+          <label className="block">
+            <span className="text-[12px] text-ink-soft">마감일 (선택)</span>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="mt-1.5 w-full rounded-lg border border-line bg-canvas px-3 py-2.5 text-[14px] outline-none focus:border-accent"
+            />
+          </label>
 
-        <div className="mt-4">
-          <span className="text-[12px] text-ink-soft">아이콘</span>
-          <div role="radiogroup" aria-label="아이콘" className="mt-1.5 flex gap-2">
-            {ICON_ORDER.map((name) => (
+          <div>
+            <span className="text-[12px] text-ink-soft">아이콘</span>
+            <div role="radiogroup" aria-label="아이콘" className="mt-1.5 flex gap-2">
+              {ICON_ORDER.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  role="radio"
+                  aria-checked={icon === name}
+                  aria-label={ICON_LABELS[name]}
+                  title={ICON_LABELS[name]}
+                  onClick={() => setIcon(name)}
+                  className={`grid size-9 place-items-center rounded-[10px] border bg-card transition ${
+                    icon === name
+                      ? "border-accent-deep ring-2 ring-soft-deep"
+                      : "border-line hover:border-ink-faint"
+                  }`}
+                >
+                  <TaskIcon icon={name} color={color} className="size-4" />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <span className="text-[12px] text-ink-soft">색상</span>
+            <div role="radiogroup" aria-label="색상" className="mt-2 flex items-center gap-2.5">
               <button
-                key={name}
                 type="button"
                 role="radio"
-                aria-checked={icon === name}
-                aria-label={ICON_LABELS[name]}
-                title={ICON_LABELS[name]}
-                onClick={() => setIcon(name)}
-                className={`grid size-9 place-items-center rounded-[10px] border bg-card transition ${
-                  icon === name
-                    ? "border-accent-deep ring-2 ring-soft-deep"
-                    : "border-line hover:border-ink-faint"
+                aria-checked={color === null}
+                aria-label="테마 기본"
+                title="테마 기본"
+                onClick={() => setColor(null)}
+                className={`size-6 rounded-full bg-accent transition ${
+                  color === null ? "ring-2 ring-ink-soft ring-offset-2 ring-offset-card" : ""
                 }`}
-              >
-                <TaskIcon icon={name} color={color} className="size-4" />
-              </button>
-            ))}
+              />
+              {ICON_COLORS.map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={color === c.value}
+                  aria-label={c.label}
+                  title={c.label}
+                  onClick={() => setColor(c.value)}
+                  className={`size-6 rounded-full transition ${
+                    color === c.value ? "ring-2 ring-ink-soft ring-offset-2 ring-offset-card" : ""
+                  }`}
+                  style={{ backgroundColor: c.value }}
+                />
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div className="mt-4">
-          <span className="text-[12px] text-ink-soft">색상</span>
-          <div role="radiogroup" aria-label="색상" className="mt-2 flex items-center gap-2.5">
+          <div className="flex gap-2">
             <button
               type="button"
-              role="radio"
-              aria-checked={color === null}
-              aria-label="테마 기본"
-              title="테마 기본"
-              onClick={() => setColor(null)}
-              className={`size-6 rounded-full bg-accent transition ${
-                color === null ? "ring-2 ring-ink-soft ring-offset-2 ring-offset-card" : ""
-              }`}
-            />
-            {ICON_COLORS.map((c) => (
-              <button
-                key={c.value}
-                type="button"
-                role="radio"
-                aria-checked={color === c.value}
-                aria-label={c.label}
-                title={c.label}
-                onClick={() => setColor(c.value)}
-                className={`size-6 rounded-full transition ${
-                  color === c.value ? "ring-2 ring-ink-soft ring-offset-2 ring-offset-card" : ""
-                }`}
-                style={{ backgroundColor: c.value }}
-              />
-            ))}
+              onClick={onClose}
+              className="flex-1 rounded-full border border-line py-2.5 text-[13px] text-ink-soft transition hover:bg-soft"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              disabled={!canSave}
+              className="flex-1 rounded-full bg-accent py-2.5 text-[13px] font-medium text-white transition hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {saving ? "저장 중…" : "저장"}
+            </button>
           </div>
-        </div>
-
-        <div className="mt-6 flex gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 rounded-full border border-line py-2.5 text-[13px] text-ink-soft transition hover:bg-soft"
-          >
-            취소
-          </button>
-          <button
-            type="submit"
-            disabled={!canSave}
-            className="flex-1 rounded-full bg-accent py-2.5 text-[13px] font-medium text-white transition hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {saving ? "저장 중…" : "저장"}
-          </button>
         </div>
       </form>
     </div>
