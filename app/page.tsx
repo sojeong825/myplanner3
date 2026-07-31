@@ -8,7 +8,7 @@ import DdayList from "@/components/DdayList";
 import Sidebar from "@/components/Sidebar";
 import TaskList from "@/components/TaskList";
 import TaskModal from "@/components/TaskModal";
-import { addDays, addMonthsKey, todayKey, type DateKey } from "@/lib/date";
+import { addDays, addMonthsKey, diffDays, todayKey, type DateKey } from "@/lib/date";
 import type { CalendarView, ThemeId } from "@/lib/settings";
 import { supabase } from "@/lib/supabase";
 import { TASK_COLUMNS, type NewTask, type Task } from "@/lib/types";
@@ -119,13 +119,16 @@ export default function Page() {
     return map;
   }, [tasks]);
 
-  // 노출 조건: 미완료 AND 마감일 있음 → 마감일 오름차순
+  // 노출 조건: 미완료 AND 마감일 있음 AND 아직 마감 전(D-Day 포함) → 마감일 오름차순.
+  // 마감이 지난 항목(D+1 이후)은 '남은 일정'이 아니므로 뺀다.
   const ddayTasks = useMemo(
     () =>
-      tasks
-        .filter((t) => !t.is_done && t.due_date)
-        .sort((a, b) => (a.due_date! < b.due_date! ? -1 : 1)),
-    [tasks],
+      today
+        ? tasks
+            .filter((t) => !t.is_done && t.due_date && diffDays(t.due_date, today) >= 0)
+            .sort((a, b) => (a.due_date! < b.due_date! ? -1 : 1))
+        : [],
+    [tasks, today],
   );
 
   const pending = useMemo(

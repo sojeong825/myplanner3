@@ -127,10 +127,3 @@ export function formatWeekTitle(anchor: DateKey) {
     : `${start.y}년 ${start.m}월 ${start.d}일 – ${end.m}월 ${end.d}일`;
 }
 
-export function formatSidebarDate(d: Date) {
-  return `${pad(d.getMonth() + 1)}.${pad(d.getDate())} (${WEEKDAYS[d.getDay()]})`;
-}
-
-export function formatClock(d: Date) {
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}

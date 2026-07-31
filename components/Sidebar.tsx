@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import PlannerName from "@/components/PlannerName";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import ThemePicker from "@/components/ThemePicker";
-import { formatClock, formatSidebarDate } from "@/lib/date";
 import type { SaveResult, ThemeId } from "@/lib/settings";
 
 type Props = {
@@ -39,17 +37,9 @@ export default function Sidebar({
   onProfileChange,
   onThemeChange,
 }: Props) {
-  const [now, setNow] = useState(() => new Date());
-
-  useEffect(() => {
-    // 분 단위 표시라 30초마다만 갱신하면 충분하다.
-    const id = setInterval(() => setNow(new Date()), 30_000);
-    return () => clearInterval(id);
-  }, []);
-
   return (
     <aside className="sticky top-0 flex h-screen w-[204px] shrink-0 flex-col gap-6 overflow-y-auto border-r border-line bg-card px-5 py-8">
-      {/* 프로필 사진 → 이름 + 연필 → 통계 → 테마 → 날짜·시계 */}
+      {/* 프로필 사진 → 이름 + 연필 → 통계 → 테마 */}
       <div className="flex flex-col items-center gap-2.5">
         <ProfileAvatar image={profileImage} onChange={onProfileChange} />
         <div className="w-full">
@@ -66,15 +56,8 @@ export default function Sidebar({
         <Stat label="완료" value={doneCount} />
       </div>
 
-      <div className="mt-auto flex flex-col gap-5">
+      <div className="mt-auto">
         <ThemePicker value={theme} onChange={onThemeChange} />
-
-        <div className="rounded-card bg-accent px-4 py-4 text-white">
-          <p className="text-[12px] text-white/75">{formatSidebarDate(now)}</p>
-          <p className="mt-1 font-mono text-[28px] leading-none tracking-tight">
-            {formatClock(now)}
-          </p>
-        </div>
       </div>
     </aside>
   );
