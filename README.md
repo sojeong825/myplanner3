@@ -108,6 +108,16 @@ Task 데이터와는 완전히 분리돼 있고, 새로고침해도 유지된다
 | `due_date` | date | 선택. 없으면 D-day 목록·달력에 나오지 않음 |
 | `is_done` | boolean | 기본값 false |
 | `created_at` | timestamptz | 자동 기록 |
+| `icon` | text | `circle` / `star` / `heart` / `triangle` / `square`. null이면 circle |
+| `icon_color` | text | HEX 문자열. null이면 현재 테마의 `--accent` |
+
+`icon` / `icon_color`는 nullable이라 이 컬럼이 생기기 전에 저장된 할 일도 그대로 읽힌다.
+아이콘은 유니코드 문자(★♥▲) 대신 인라인 SVG로 그린다 — 문자는 OS·브라우저마다 모양과
+크기가 달라 정렬이 흔들린다. 5종 모두 `lib/icons.tsx` 한 곳에 있다.
+
+모달에서 색을 고르지 않으면 저장 시점의 `--accent` 값을 굳혀서 넣는다. 반대로
+`icon_color`가 null인 할 일은 `fill="var(--accent)"`로 그려서 테마를 바꾸면 함께 바뀐다.
+완료된 할 일은 아이콘도 `--ink-faint` 톤으로 흐려진다.
 
 스키마는 `supabase/migrations/0001_create_tasks.sql`.
 

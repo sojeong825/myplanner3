@@ -1,6 +1,7 @@
 "use client";
 
 import { getDday, type DateKey } from "@/lib/date";
+import { TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
 type Props = {
@@ -28,11 +29,7 @@ export default function DdayList({ tasks, today }: Props) {
                 key={task.id}
                 className="flex items-center gap-2 rounded-[10px] bg-card px-3 py-2.5"
               >
-                <span
-                  className={`size-1.5 shrink-0 rounded-full ${
-                    dday.overdue ? "bg-accent-deep" : "bg-accent"
-                  }`}
-                />
+                <TaskIcon icon={task.icon} color={task.icon_color} />
                 <span className="truncate text-[13px]" title={task.title}>
                   {task.title}
                 </span>

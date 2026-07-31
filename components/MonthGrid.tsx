@@ -1,6 +1,7 @@
 "use client";
 
 import { buildMonthGrid, WEEKDAYS, type DateKey } from "@/lib/date";
+import { TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
 type Props = {
@@ -65,10 +66,11 @@ export default function MonthGrid({ year, month, today, tasksByDate }: Props) {
                       task.is_done ? "text-ink-faint line-through" : "text-ink"
                     }`}
                   >
-                    <span
-                      className={`size-1.5 shrink-0 rounded-full ${
-                        task.is_done ? "bg-ink-faint" : "bg-accent"
-                      }`}
+                    <TaskIcon
+                      icon={task.icon}
+                      color={task.icon_color}
+                      done={task.is_done}
+                      className="size-3"
                     />
                     <span className="truncate">{task.title}</span>
                   </div>

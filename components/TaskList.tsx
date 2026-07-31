@@ -1,5 +1,6 @@
 "use client";
 
+import { TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
 type Props = {
@@ -31,6 +32,9 @@ function Row({ task, onToggle }: { task: Task; onToggle: (t: Task) => void }) {
             </svg>
           )}
         </span>
+
+        {/* 체크박스와 이름 사이 */}
+        <TaskIcon icon={task.icon} color={task.icon_color} done={task.is_done} />
 
         <span
           className={`truncate text-[13px] ${

@@ -1,6 +1,7 @@
 "use client";
 
 import { buildWeek, WEEKDAYS, type DateKey } from "@/lib/date";
+import { TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
 type Props = {
@@ -54,10 +55,17 @@ export default function WeekGrid({ anchor, today, tasksByDate }: Props) {
                   key={task.id}
                   title={task.title}
                   // 항목은 흰 배경 + 여백만으로 구분한다. 완료는 텍스트만 흐리게.
-                  className={`rounded-[10px] bg-card px-2 py-1.5 text-[11px] leading-snug ${
+                  className={`flex items-start gap-1.5 rounded-[10px] bg-card px-2 py-1.5 text-[11px] leading-snug ${
                     task.is_done ? "text-ink-faint line-through" : "text-ink"
                   }`}
                 >
+                  {/* 여러 줄로 넘어가도 첫 줄에 맞춰 정렬 */}
+                  <TaskIcon
+                    icon={task.icon}
+                    color={task.icon_color}
+                    done={task.is_done}
+                    className="mt-px size-3"
+                  />
                   <span className="line-clamp-3">{task.title}</span>
                 </div>
               ))}

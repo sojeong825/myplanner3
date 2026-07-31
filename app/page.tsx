@@ -11,7 +11,7 @@ import TaskModal from "@/components/TaskModal";
 import { addDays, addMonthsKey, todayKey, type DateKey } from "@/lib/date";
 import type { CalendarView, ThemeId } from "@/lib/settings";
 import { supabase } from "@/lib/supabase";
-import type { NewTask, Task } from "@/lib/types";
+import { TASK_COLUMNS, type NewTask, type Task } from "@/lib/types";
 import { useSettings } from "@/lib/useSettings";
 
 /** 마감일 오름차순, 마감 없는 항목은 뒤로. 같으면 최근 등록 순. */
@@ -50,7 +50,7 @@ export default function Page() {
     (async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("id, title, due_date, is_done, created_at")
+        .select(TASK_COLUMNS)
         .order("created_at", { ascending: false });
 
       if (cancelled) return;
@@ -71,7 +71,7 @@ export default function Page() {
     const { data, error } = await supabase
       .from("tasks")
       .insert(input)
-      .select("id, title, due_date, is_done, created_at")
+      .select(TASK_COLUMNS)
       .single();
 
     setSaving(false);
