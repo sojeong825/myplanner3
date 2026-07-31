@@ -17,6 +17,7 @@ type Props = {
   onNext: () => void;
   onToday: () => void;
   onViewChange: (view: CalendarView) => void;
+  onSelect: (task: Task) => void;
   onAdd: () => void;
 };
 
@@ -82,6 +83,7 @@ export default function Calendar({
   onNext,
   onToday,
   onViewChange,
+  onSelect,
   onAdd,
 }: Props) {
   const { y, m } = keyParts(anchor);
@@ -123,9 +125,9 @@ export default function Calendar({
       </header>
 
       {view === "month" ? (
-        <MonthGrid year={y} month={m} today={today} tasksByDate={tasksByDate} />
+        <MonthGrid year={y} month={m} today={today} tasksByDate={tasksByDate} onSelect={onSelect} />
       ) : (
-        <WeekGrid anchor={anchor} today={today} tasksByDate={tasksByDate} />
+        <WeekGrid anchor={anchor} today={today} tasksByDate={tasksByDate} onSelect={onSelect} />
       )}
     </section>
   );

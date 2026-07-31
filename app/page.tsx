@@ -37,6 +37,18 @@ export default function Page() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  /** null이면 추가 모드, Task가 담기면 그 항목 수정 모드 */
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  const openAdd = useCallback(() => {
+    setEditingTask(null);
+    setModalOpen(true);
+  }, []);
+
+  const openEdit = useCallback((task: Task) => {
+    setEditingTask(task);
+    setModalOpen(true);
+  }, []);
 
   useEffect(() => {
     const key = todayKey();
@@ -64,24 +76,50 @@ export default function Page() {
     };
   }, []);
 
-  const addTask = useCallback(async (input: NewTask) => {
+  /** 추가와 수정을 한 곳에서 처리한다. editingTask가 있으면 update, 없으면 insert. */
+  const submitTask = useCallback(
+    async (draft: NewTask) => {
+      setSaving(true);
+      setError(null);
+
+      const query = editingTask
+        ? supabase.from("tasks").update(draft).eq("id", editingTask.id)
+        : supabase.from("tasks").insert(draft);
+
+      const { data, error } = await query.select(TASK_COLUMNS).single();
+
+      setSaving(false);
+
+      if (error) {
+        setError(`저장에 실패했어요: ${error.message}`);
+        return;
+      }
+
+      const saved = data as Task;
+      setTasks((prev) =>
+        editingTask
+          ? prev.map((t) => (t.id === saved.id ? saved : t))
+          : [saved, ...prev],
+      );
+      setModalOpen(false);
+    },
+    [editingTask],
+  );
+
+  const deleteTask = useCallback(async (task: Task) => {
     setSaving(true);
     setError(null);
 
-    const { data, error } = await supabase
-      .from("tasks")
-      .insert(input)
-      .select(TASK_COLUMNS)
-      .single();
+    const { error } = await supabase.from("tasks").delete().eq("id", task.id);
 
     setSaving(false);
 
     if (error) {
-      setError(`저장에 실패했어요: ${error.message}`);
+      setError(`삭제하지 못했어요: ${error.message}`);
       return;
     }
 
-    setTasks((prev) => [data as Task, ...prev]);
+    setTasks((prev) => prev.filter((t) => t.id !== task.id));
     setModalOpen(false);
   }, []);
 
@@ -211,7 +249,8 @@ export default function Page() {
             onNext={() => step(1)}
             onToday={() => setAnchor(todayKey())}
             onViewChange={(next) => update({ calendar_view: next })}
-            onAdd={() => setModalOpen(true)}
+            onSelect={openEdit}
+            onAdd={openAdd}
           />
         </div>
 
@@ -220,7 +259,7 @@ export default function Page() {
           {loading ? (
             <div className="h-40 animate-pulse rounded-card border border-line bg-card" />
           ) : (
-            <DdayList tasks={ddayTasks} today={today} />
+            <DdayList tasks={ddayTasks} today={today} onSelect={openEdit} />
           )}
 
           {loading ? (
@@ -230,7 +269,8 @@ export default function Page() {
               pending={pending}
               done={done}
               onToggle={toggleTask}
-              onAdd={() => setModalOpen(true)}
+              onSelect={openEdit}
+              onAdd={openAdd}
             />
           )}
         </div>
@@ -238,9 +278,11 @@ export default function Page() {
 
       <TaskModal
         open={modalOpen}
+        task={editingTask}
         saving={saving}
         onClose={() => setModalOpen(false)}
-        onSubmit={addTask}
+        onSubmit={submitTask}
+        onDelete={deleteTask}
       />
     </div>
   );

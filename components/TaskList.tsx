@@ -7,14 +7,24 @@ type Props = {
   pending: Task[];
   done: Task[];
   onToggle: (task: Task) => void;
+  onSelect: (task: Task) => void;
   onAdd: () => void;
 };
 
-function Row({ task, onToggle }: { task: Task; onToggle: (t: Task) => void }) {
+function Row({
+  task,
+  onToggle,
+  onSelect,
+}: {
+  task: Task;
+  onToggle: (t: Task) => void;
+  onSelect: (t: Task) => void;
+}) {
   return (
-    <li>
-      {/* 보더·그림자 없이 여백만으로 구분한다. hover 때만 아주 옅게 톤이 바뀐다. */}
-      <label className="flex cursor-pointer items-center gap-2.5 rounded-[10px] bg-card px-3 py-2.5 transition hover:bg-canvas">
+    // 보더·그림자 없이 여백만으로 구분한다. hover 때만 아주 옅게 톤이 바뀐다.
+    // 체크박스는 완료 토글, 이름 영역은 수정 모달 — 클릭 영역을 나눠둔다.
+    <li className="flex items-center gap-2.5 rounded-[10px] bg-card px-3 py-2.5 transition hover:bg-canvas">
+      <label className="flex cursor-pointer items-center" title="완료 표시">
         <input
           type="checkbox"
           checked={task.is_done}
@@ -32,15 +42,20 @@ function Row({ task, onToggle }: { task: Task; onToggle: (t: Task) => void }) {
             </svg>
           )}
         </span>
+      </label>
 
-        {/* 체크박스와 이름 사이 */}
+      <button
+        type="button"
+        onClick={() => onSelect(task)}
+        title={task.title}
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 text-left"
+      >
         <TaskIcon icon={task.icon} color={task.icon_color} done={task.is_done} />
 
         <span
           className={`truncate text-[13px] ${
             task.is_done ? "text-ink-faint line-through" : "text-ink"
           }`}
-          title={task.title}
         >
           {task.title}
         </span>
@@ -54,12 +69,12 @@ function Row({ task, onToggle }: { task: Task; onToggle: (t: Task) => void }) {
             {task.due_date.slice(5).replace("-", "/")}
           </span>
         )}
-      </label>
+      </button>
     </li>
   );
 }
 
-export default function TaskList({ pending, done, onToggle, onAdd }: Props) {
+export default function TaskList({ pending, done, onToggle, onSelect, onAdd }: Props) {
   const empty = pending.length === 0 && done.length === 0;
 
   return (
@@ -83,11 +98,11 @@ export default function TaskList({ pending, done, onToggle, onAdd }: Props) {
           아직 할 일이 없어요. + 를 눌러 추가해보세요.
         </p>
       ) : (
-        <div className="mt-3 flex min-h-0 flex-1 flex-col gap-4 -mx-1 overflow-y-auto px-1">
+        <div className="mt-3 -mx-1 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1">
           {pending.length > 0 && (
             <ul className="flex flex-col gap-2">
               {pending.map((task) => (
-                <Row key={task.id} task={task} onToggle={onToggle} />
+                <Row key={task.id} task={task} onToggle={onToggle} onSelect={onSelect} />
               ))}
             </ul>
           )}
@@ -97,7 +112,7 @@ export default function TaskList({ pending, done, onToggle, onAdd }: Props) {
               <p className="px-1 pb-1.5 text-[11px] text-ink-faint">완료 {done.length}</p>
               <ul className="flex flex-col gap-2">
                 {done.map((task) => (
-                  <Row key={task.id} task={task} onToggle={onToggle} />
+                  <Row key={task.id} task={task} onToggle={onToggle} onSelect={onSelect} />
                 ))}
               </ul>
             </div>

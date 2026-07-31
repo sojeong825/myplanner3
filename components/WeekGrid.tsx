@@ -8,6 +8,7 @@ type Props = {
   anchor: DateKey;
   today: DateKey;
   tasksByDate: Map<DateKey, Task[]>;
+  onSelect: (task: Task) => void;
 };
 
 /**
@@ -16,7 +17,7 @@ type Props = {
  * '날짜 컬럼 + 카드 목록' 형태로 만든다. due_date를 날짜+시간으로 넓힐 때
  * 시간축을 함께 검토하면 된다.
  */
-export default function WeekGrid({ anchor, today, tasksByDate }: Props) {
+export default function WeekGrid({ anchor, today, tasksByDate, onSelect }: Props) {
   const days = buildWeek(anchor);
 
   return (
@@ -51,11 +52,13 @@ export default function WeekGrid({ anchor, today, tasksByDate }: Props) {
 
             <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-1.5 pb-2">
               {dayTasks.map((task) => (
-                <div
+                <button
                   key={task.id}
+                  type="button"
+                  onClick={() => onSelect(task)}
                   title={task.title}
                   // 항목은 흰 배경 + 여백만으로 구분한다. 완료는 텍스트만 흐리게.
-                  className={`flex items-start gap-1.5 rounded-[10px] bg-card px-2 py-1.5 text-[11px] leading-snug ${
+                  className={`flex cursor-pointer items-start gap-1.5 rounded-[10px] bg-card px-2 py-1.5 text-left text-[11px] leading-snug transition hover:bg-soft ${
                     task.is_done ? "text-ink-faint line-through" : "text-ink"
                   }`}
                 >
@@ -67,7 +70,7 @@ export default function WeekGrid({ anchor, today, tasksByDate }: Props) {
                     className="mt-px size-3"
                   />
                   <span className="line-clamp-3">{task.title}</span>
-                </div>
+                </button>
               ))}
             </div>
           </div>

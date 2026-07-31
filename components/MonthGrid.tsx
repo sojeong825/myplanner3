@@ -9,9 +9,10 @@ type Props = {
   month: number;
   today: DateKey;
   tasksByDate: Map<DateKey, Task[]>;
+  onSelect: (task: Task) => void;
 };
 
-export default function MonthGrid({ year, month, today, tasksByDate }: Props) {
+export default function MonthGrid({ year, month, today, tasksByDate, onSelect }: Props) {
   const cells = buildMonthGrid(year, month);
 
   return (
@@ -59,10 +60,12 @@ export default function MonthGrid({ year, month, today, tasksByDate }: Props) {
 
               <div className="flex min-h-0 flex-col gap-0.5 overflow-hidden">
                 {dayTasks.map((task) => (
-                  <div
+                  <button
                     key={task.id}
+                    type="button"
+                    onClick={() => onSelect(task)}
                     title={task.title}
-                    className={`flex items-center gap-1 rounded px-0.5 text-[11px] leading-4 ${
+                    className={`flex cursor-pointer items-center gap-1 rounded px-0.5 text-left text-[11px] leading-4 transition hover:bg-soft ${
                       task.is_done ? "text-ink-faint line-through" : "text-ink"
                     }`}
                   >
@@ -73,7 +76,7 @@ export default function MonthGrid({ year, month, today, tasksByDate }: Props) {
                       className="size-3"
                     />
                     <span className="truncate">{task.title}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>

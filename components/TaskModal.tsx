@@ -8,34 +8,50 @@ import {
   ICON_LABELS,
   ICON_ORDER,
   TaskIcon,
+  toIconName,
   type TaskIconName,
 } from "@/lib/icons";
-import type { NewTask } from "@/lib/types";
+import type { NewTask, Task } from "@/lib/types";
 
 type Props = {
   open: boolean;
+  /** null이면 추가, Task가 오면 그 할 일을 수정한다. */
+  task: Task | null;
   saving: boolean;
   onClose: () => void;
-  onSubmit: (task: NewTask) => void;
+  onSubmit: (draft: NewTask) => void;
+  onDelete: (task: Task) => void;
 };
 
-export default function TaskModal({ open, saving, onClose, onSubmit }: Props) {
+export default function TaskModal({
+  open,
+  task,
+  saving,
+  onClose,
+  onSubmit,
+  onDelete,
+}: Props) {
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [icon, setIcon] = useState<TaskIconName>(DEFAULT_ICON);
   /** null이면 '테마 기본' — 저장할 때 현재 --accent 값으로 굳는다. */
   const [color, setColor] = useState<string | null>(null);
+  /** 삭제 버튼을 한 번 누른 상태. 한 번 더 눌러야 실제로 지운다. */
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
 
-  // 열릴 때마다 빈 상태로 시작하고 이름 칸에 포커스를 준다.
+  const editing = task !== null;
+
+  // 열릴 때마다 상태를 초기화한다. 수정이면 저장된 값으로 채운다.
   useEffect(() => {
     if (!open) return;
-    setTitle("");
-    setDueDate("");
-    setIcon(DEFAULT_ICON);
-    setColor(null);
+    setTitle(task?.title ?? "");
+    setDueDate(task?.due_date ?? "");
+    setIcon(toIconName(task?.icon));
+    setColor(task?.icon_color ?? null);
+    setConfirmDelete(false);
     titleRef.current?.focus();
-  }, [open]);
+  }, [open, task]);
 
   useEffect(() => {
     if (!open) return;
@@ -78,7 +94,7 @@ export default function TaskModal({ open, saving, onClose, onSubmit }: Props) {
         className="w-full max-w-[380px] rounded-2xl border border-line bg-card p-6 shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)]"
       >
         <h2 id="task-modal-title" className="text-[16px] font-medium">
-          할 일 추가
+          {editing ? "할 일 수정" : "할 일 추가"}
         </h2>
 
         {/*
@@ -166,11 +182,33 @@ export default function TaskModal({ open, saving, onClose, onSubmit }: Props) {
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {editing && (
+              // 실수 방지: 한 번 누르면 버튼 문구가 확인으로 바뀌고, 한 번 더 눌러야 지운다.
+              <button
+                type="button"
+                onClick={() => {
+                  if (!confirmDelete) {
+                    setConfirmDelete(true);
+                    return;
+                  }
+                  onDelete(task);
+                }}
+                disabled={saving}
+                className={`rounded-full px-3 py-2.5 text-[13px] transition disabled:opacity-40 ${
+                  confirmDelete
+                    ? "text-accent-deep underline underline-offset-2"
+                    : "text-ink-faint hover:text-ink-soft"
+                }`}
+              >
+                {confirmDelete ? "삭제할까요?" : "삭제"}
+              </button>
+            )}
+
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-full border border-line py-2.5 text-[13px] text-ink-soft transition hover:bg-soft"
+              className="ml-auto flex-1 rounded-full border border-line py-2.5 text-[13px] text-ink-soft transition hover:bg-soft"
             >
               취소
             </button>

@@ -8,9 +8,10 @@ type Props = {
   /** 미완료 + 마감일 있음 + 아직 마감 전 + 마감일 오름차순으로 이미 걸러진 목록 */
   tasks: Task[];
   today: DateKey;
+  onSelect: (task: Task) => void;
 };
 
-export default function DdayList({ tasks, today }: Props) {
+export default function DdayList({ tasks, today, onSelect }: Props) {
   return (
     // 항목이 늘어도 화면 절반을 넘지 않게 카드 높이를 묶고, 넘치면 안에서만 스크롤한다.
     // 그래야 아래 '할 일' 카드 자리가 밀리지 않는다.
@@ -27,21 +28,23 @@ export default function DdayList({ tasks, today }: Props) {
             const dday = getDday(task.due_date as string, today);
 
             return (
-              <li
-                key={task.id}
-                className="flex shrink-0 items-center gap-2 rounded-[10px] bg-card px-3 py-2.5"
-              >
-                <TaskIcon icon={task.icon} color={task.icon_color} />
-                <span className="truncate text-[13px]" title={task.title}>
-                  {task.title}
-                </span>
-                <span
-                  className={`ml-auto shrink-0 font-mono text-[12px] ${
-                    dday.today ? "text-ink" : "text-ink-soft"
-                  }`}
+              <li key={task.id} className="shrink-0">
+                <button
+                  type="button"
+                  onClick={() => onSelect(task)}
+                  title={task.title}
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-[10px] bg-card px-3 py-2.5 text-left transition hover:bg-canvas"
                 >
-                  {dday.label}
-                </span>
+                  <TaskIcon icon={task.icon} color={task.icon_color} />
+                  <span className="truncate text-[13px]">{task.title}</span>
+                  <span
+                    className={`ml-auto shrink-0 font-mono text-[12px] ${
+                      dday.today ? "text-ink" : "text-ink-soft"
+                    }`}
+                  >
+                    {dday.label}
+                  </span>
+                </button>
               </li>
             );
           })}
