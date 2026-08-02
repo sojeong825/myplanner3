@@ -10,6 +10,7 @@ import MergePrompt from "@/components/MergePrompt";
 import Sidebar from "@/components/Sidebar";
 import TaskList from "@/components/TaskList";
 import TaskModal from "@/components/TaskModal";
+import TaskSearch from "@/components/TaskSearch";
 import { addDays, addMonthsKey, diffDays, todayKey, type DateKey } from "@/lib/date";
 import type { CalendarView, ThemeId } from "@/lib/settings";
 import {
@@ -289,6 +290,8 @@ export default function Page() {
               </button>
             </div>
           )}
+
+          <TaskSearch tasks={tasks} today={today} onSelect={openEdit} />
 
           {/* 배너는 180px 고정. 카운터는 편집할 때만 더 커지면 되므로 items-start. */}
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-start gap-5">
