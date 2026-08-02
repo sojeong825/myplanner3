@@ -17,7 +17,8 @@ import { TASK_COLUMNS, type NewTask, type Task } from "@/lib/types";
  */
 export type Store = {
   listTasks(): Promise<Task[]>;
-  addTask(draft: NewTask): Promise<Task>;
+  /** 마감일을 여러 개 고르면 한 번에 여러 건이 만들어진다. */
+  addTasks(drafts: NewTask[]): Promise<Task[]>;
   updateTask(id: number, draft: NewTask): Promise<Task>;
   setDone(id: number, done: boolean): Promise<void>;
   removeTask(id: number): Promise<void>;
@@ -76,19 +77,24 @@ const guestStore: Store = {
     return readLocalTasks().sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
   },
 
-  async addTask(draft) {
+  async addTasks(drafts) {
     const tasks = readLocalTasks();
-    const task: Task = {
-      id: nextLocalId(tasks),
+    let nextId = nextLocalId(tasks);
+    const now = Date.now();
+
+    const created: Task[] = drafts.map((draft, i) => ({
+      id: nextId++,
       title: draft.title,
       due_date: draft.due_date,
       is_done: false,
-      created_at: new Date().toISOString(),
+      // 같은 밀리초로 몰리면 정렬이 뒤섞여서 1ms씩 벌려둔다.
+      created_at: new Date(now + i).toISOString(),
       icon: draft.icon,
       icon_color: draft.icon_color,
-    };
-    writeLocalTasks([task, ...tasks]);
-    return task;
+    }));
+
+    writeLocalTasks([...created.slice().reverse(), ...tasks]);
+    return created;
   },
 
   async updateTask(id, draft) {
@@ -139,15 +145,14 @@ function createServerStore(userId: string): Store {
       return data as Task[];
     },
 
-    async addTask(draft) {
-      // user_id는 컬럼 기본값 auth.uid()가 채운다.
+    async addTasks(drafts) {
+      // user_id는 컬럼 기본값 auth.uid()가 채운다. 여러 건도 한 번의 insert로 보낸다.
       const { data, error } = await supabase
         .from("tasks")
-        .insert(draft)
-        .select(TASK_COLUMNS)
-        .single();
+        .insert(drafts)
+        .select(TASK_COLUMNS);
       if (error) fail("저장에 실패했어요", error);
-      return data as Task;
+      return data as Task[];
     },
 
     async updateTask(id, draft) {

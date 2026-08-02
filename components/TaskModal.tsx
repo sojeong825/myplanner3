@@ -19,9 +19,13 @@ type Props = {
   task: Task | null;
   saving: boolean;
   onClose: () => void;
-  onSubmit: (draft: NewTask) => void;
+  /** 마감일을 여러 개 고르면 날짜 수만큼 넘어온다. */
+  onSubmit: (drafts: NewTask[]) => void;
   onDelete: (task: Task) => void;
 };
+
+/** '2026-08-04' → '08/04' */
+const shortDate = (key: string) => key.slice(5).replace("-", "/");
 
 export default function TaskModal({
   open,
@@ -32,7 +36,11 @@ export default function TaskModal({
   onDelete,
 }: Props) {
   const [title, setTitle] = useState("");
-  const [dueDate, setDueDate] = useState("");
+  /**
+   * 추가할 때는 여러 날짜를 골라 한 번에 여러 건을 만든다.
+   * 수정은 이미 있는 한 건을 고치는 거라 항상 0~1개만 담는다.
+   */
+  const [dates, setDates] = useState<string[]>([]);
   const [icon, setIcon] = useState<TaskIconName>(DEFAULT_ICON);
   /** null이면 '테마 기본' — 저장할 때 현재 --accent 값으로 굳는다. */
   const [color, setColor] = useState<string | null>(null);
@@ -46,7 +54,7 @@ export default function TaskModal({
   useEffect(() => {
     if (!open) return;
     setTitle(task?.title ?? "");
-    setDueDate(task?.due_date ?? "");
+    setDates(task?.due_date ? [task.due_date] : []);
     setIcon(toIconName(task?.icon));
     setColor(task?.icon_color ?? null);
     setConfirmOpen(false);
@@ -69,17 +77,30 @@ export default function TaskModal({
 
   const canSave = title.trim().length > 0 && !saving;
 
+  const addDate = (value: string) => {
+    if (!value) return;
+    // 수정은 한 건짜리라 날짜도 하나만 유지한다.
+    if (editing) setDates([value]);
+    else setDates((prev) => (prev.includes(value) ? prev : [...prev, value].sort()));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSave) return;
-    // 마감일은 선택 항목 — 비어 있으면 null로 저장한다.
+
     // 색을 고르지 않았으면 지금 테마의 --accent 값을 굳혀서 저장한다.
-    onSubmit({
+    const base = {
       title: title.trim(),
-      due_date: dueDate || null,
       icon,
       icon_color: color ?? currentAccent(),
-    });
+    };
+
+    // 마감일은 선택 항목 — 하나도 없으면 마감 없는 할 일 한 건으로 저장한다.
+    onSubmit(
+      dates.length === 0
+        ? [{ ...base, due_date: null }]
+        : dates.map((due_date) => ({ ...base, due_date })),
+    );
   };
 
   return (
@@ -139,15 +160,40 @@ export default function TaskModal({
             />
           </label>
 
-          <label className="block">
-            <span className="text-[12px] text-ink-soft">마감일 (선택)</span>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="mt-1.5 w-full rounded-lg border border-line bg-canvas px-3 py-2.5 text-[14px] outline-none focus:border-accent"
-            />
-          </label>
+          <div>
+            <label className="block">
+              <span className="text-[12px] text-ink-soft">
+                마감일 (선택){!editing && " · 여러 날짜를 고르면 각각 만들어져요"}
+              </span>
+              <input
+                type="date"
+                // 추가할 때는 고른 날짜를 아래 목록으로 옮기고 칸을 비워, 이어서 또 고를 수 있게 한다.
+                value={editing ? (dates[0] ?? "") : ""}
+                onChange={(e) => addDate(e.target.value)}
+                className="mt-1.5 w-full rounded-lg border border-line bg-canvas px-3 py-2.5 text-[14px] outline-none focus:border-accent"
+              />
+            </label>
+
+            {!editing && dates.length > 0 && (
+              <ul className="mt-2 flex flex-wrap gap-1.5">
+                {dates.map((d) => (
+                  <li key={d}>
+                    <button
+                      type="button"
+                      onClick={() => setDates((prev) => prev.filter((x) => x !== d))}
+                      aria-label={`${shortDate(d)} 빼기`}
+                      className="flex items-center gap-1 rounded-full bg-soft px-2.5 py-1 text-[12px] text-ink transition hover:bg-soft-deep"
+                    >
+                      {shortDate(d)}
+                      <svg viewBox="0 0 24 24" className="size-3 text-ink-soft" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
           <div>
             <span className="text-[12px] text-ink-soft">아이콘</span>
@@ -218,7 +264,11 @@ export default function TaskModal({
               disabled={!canSave}
               className="flex-1 rounded-full bg-accent py-2.5 text-[13px] font-medium text-white transition hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {saving ? "저장 중…" : "저장"}
+              {saving
+                ? "저장 중…"
+                : !editing && dates.length > 1
+                  ? `${dates.length}개 저장`
+                  : "저장"}
             </button>
           </div>
         </div>

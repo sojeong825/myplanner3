@@ -149,19 +149,22 @@ export default function Page() {
     setModalOpen(true);
   }, []);
 
-  /** 추가와 수정을 한 곳에서 처리한다. editingTask가 있으면 update, 없으면 insert. */
+  /**
+   * 추가와 수정을 한 곳에서 처리한다. editingTask가 있으면 update, 없으면 insert.
+   * 추가할 때 마감일을 여러 개 고르면 날짜 수만큼 drafts가 넘어온다.
+   */
   const submitTask = useCallback(
-    async (draft: NewTask) => {
+    async (drafts: NewTask[]) => {
       setSaving(true);
       setError(null);
       try {
-        const saved = editingTask
-          ? await store.updateTask(editingTask.id, draft)
-          : await store.addTask(draft);
-
-        setTasks((prev) =>
-          editingTask ? prev.map((t) => (t.id === saved.id ? saved : t)) : [saved, ...prev],
-        );
+        if (editingTask) {
+          const saved = await store.updateTask(editingTask.id, drafts[0]);
+          setTasks((prev) => prev.map((t) => (t.id === saved.id ? saved : t)));
+        } else {
+          const saved = await store.addTasks(drafts);
+          setTasks((prev) => [...saved, ...prev]);
+        }
         setModalOpen(false);
       } catch (e) {
         setError(message(e, "저장에 실패했어요."));
