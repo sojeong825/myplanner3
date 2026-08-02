@@ -128,7 +128,7 @@ export default function TaskModal({
               onClick={() => setConfirmOpen(true)}
               aria-label="할 일 삭제"
               title="삭제"
-              className="-mr-1 ml-auto grid size-8 place-items-center rounded-full text-ink-faint transition hover:bg-soft hover:text-accent-deep"
+              className="-mr-1 ml-auto grid size-8 place-items-center rounded-full text-danger transition hover:bg-danger/10 hover:text-danger-deep"
             >
               <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path
@@ -308,7 +308,7 @@ export default function TaskModal({
                 type="button"
                 onClick={() => onDelete(task)}
                 disabled={saving}
-                className="flex-1 rounded-full bg-accent-deep py-2.5 text-[13px] font-medium text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex-1 rounded-full bg-danger py-2.5 text-[13px] font-medium text-white transition hover:bg-danger-deep disabled:cursor-not-allowed disabled:opacity-40"
               >
                 삭제하기
               </button>

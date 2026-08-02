@@ -20,7 +20,7 @@ export default function DdayList({ tasks, today, onSelect }: Props) {
 
       {tasks.length === 0 ? (
         <p className="px-1 py-6 text-center text-[12px] text-ink-faint">
-          마감일이 있는 할 일이 없어요
+          10일 안에 마감인 일정이 없어요
         </p>
       ) : (
         <ul className="mt-3 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">

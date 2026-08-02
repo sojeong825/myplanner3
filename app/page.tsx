@@ -23,6 +23,9 @@ import type { NewTask, Task } from "@/lib/types";
 import { useAuth } from "@/lib/useAuth";
 import { useSettings } from "@/lib/useSettings";
 
+/** '다가오는 일정'에 띄울 범위. 오늘부터 이 일수 안에 마감인 것만 보여준다. */
+const UPCOMING_DAYS = 10;
+
 /** 마감일 오름차순, 마감 없는 항목은 뒤로. 같으면 최근 등록 순. */
 function byDueThenCreated(a: Task, b: Task) {
   if (a.due_date !== b.due_date) {
@@ -224,17 +227,19 @@ export default function Page() {
     return map;
   }, [tasks]);
 
-  // 노출 조건: 미완료 AND 마감일 있음 AND 아직 마감 전(D-Day 포함) → 마감일 오름차순.
-  // 마감이 지난 항목(D+1 이후)은 '남은 일정'이 아니므로 뺀다.
-  const ddayTasks = useMemo(
-    () =>
-      today
-        ? tasks
-            .filter((t) => !t.is_done && t.due_date && diffDays(t.due_date, today) >= 0)
-            .sort((a, b) => (a.due_date! < b.due_date! ? -1 : 1))
-        : [],
-    [tasks, today],
-  );
+  // 노출 조건: 미완료 AND 마감일 있음 AND D-Day ~ D-10 → 마감일 오름차순.
+  // 마감이 지난 것(D+1 이후)은 '다가오는' 일정이 아니고,
+  // 아직 먼 것(D-11 이후)은 지금 신경 쓸 일이 아니라 양쪽 다 뺀다.
+  const ddayTasks = useMemo(() => {
+    if (!today) return [];
+    return tasks
+      .filter((t) => {
+        if (t.is_done || !t.due_date) return false;
+        const left = diffDays(t.due_date, today);
+        return left >= 0 && left <= UPCOMING_DAYS;
+      })
+      .sort((a, b) => (a.due_date! < b.due_date! ? -1 : 1));
+  }, [tasks, today]);
 
   const pending = useMemo(
     () => tasks.filter((t) => !t.is_done).sort(byDueThenCreated),

@@ -117,6 +117,15 @@
   --accent-deep: #7a7a88;
 }
 
+/*
+ * 삭제처럼 뜻이 정해진 색은 테마를 따라가지 않는다.
+ * 민트 테마에서 삭제가 초록이면 위험 신호로 읽히지 않는다.
+ */
+:root {
+  --danger: #e0645c;
+  --danger-deep: #c4453d;
+}
+
 /* inline이라 유틸리티가 값을 복사하지 않고 var()를 그대로 참조한다 → 테마 교체가 즉시 반영됨 */
 @theme inline {
   --color-canvas: var(--canvas);
@@ -134,6 +143,9 @@
 
   --color-accent: var(--accent);
   --color-accent-deep: var(--accent-deep);
+
+  --color-danger: var(--danger);
+  --color-danger-deep: var(--danger-deep);
 
   /* CDN이 늦거나 실패해도 글자가 보이도록 뒤의 폴백은 반드시 남겨둔다. */
   --font-sans: "JoseonGulim", var(--font-noto-kr), "Malgun Gothic", -apple-system,
