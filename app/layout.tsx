@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Noto_Sans_KR, Geist_Mono } from "next/font/google";
+import { Noto_Sans_KR } from "next/font/google";
 import { DEFAULT_SETTINGS, THEME_BOOT_SCRIPT } from "@/lib/settings";
 import "./globals.css";
 
@@ -7,11 +7,6 @@ const notoKr = Noto_Sans_KR({
   variable: "--font-noto-kr",
   subsets: ["latin"],
   weight: ["400", "500", "700"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -30,7 +25,7 @@ export default function RootLayout({
       // 아래 인라인 스크립트가 하이드레이션 전에 data-theme을 바꾸므로 DOM 값을 그대로 둔다.
       data-theme={DEFAULT_SETTINGS.theme}
       suppressHydrationWarning
-      className={`${notoKr.variable} ${geistMono.variable} antialiased`}
+      className={`${notoKr.variable} antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />

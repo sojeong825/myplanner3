@@ -25,7 +25,7 @@ function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex items-baseline justify-between px-1 py-2">
       <span className="text-[13px] text-ink-soft">{label}</span>
-      <span className="font-mono text-[15px] font-medium text-ink">{value}</span>
+      <span className="text-[15px] font-medium text-ink">{value}</span>
     </div>
   );
 }

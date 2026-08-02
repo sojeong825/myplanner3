@@ -62,7 +62,7 @@ function Row({
 
         {task.due_date && (
           <span
-            className={`ml-auto shrink-0 font-mono text-[11px] ${
+            className={`ml-auto shrink-0 text-[11px] ${
               task.is_done ? "text-ink-faint" : "text-ink-soft"
             }`}
           >

@@ -132,7 +132,7 @@ export default function TaskSearch({ tasks, today, onSelect }: Props) {
                       >
                         {task.title}
                       </span>
-                      <span className="ml-auto shrink-0 font-mono text-[11px] text-ink-soft">
+                      <span className="ml-auto shrink-0 text-[11px] text-ink-soft">
                         {task.due_date
                           ? `${task.due_date.slice(5).replace("-", "/")} · ${
                               getDday(task.due_date, today).label

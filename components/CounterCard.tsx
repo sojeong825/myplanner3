@@ -87,7 +87,7 @@ export default function CounterCard({ label, date, today, onSave }: Props) {
       </div>
 
       {date ? (
-        <p className="mt-4 font-mono text-[32px] leading-none tracking-tight text-ink">
+        <p className="mt-4 text-[32px] leading-none tracking-tight text-ink">
           {counterLabel(date, today)}
         </p>
       ) : (
