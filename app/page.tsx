@@ -1,17 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import AuthModal from "@/components/AuthModal";
 import BannerCard from "@/components/BannerCard";
 import Calendar from "@/components/Calendar";
 import CounterCard from "@/components/CounterCard";
 import DdayList from "@/components/DdayList";
+import MergePrompt from "@/components/MergePrompt";
 import Sidebar from "@/components/Sidebar";
 import TaskList from "@/components/TaskList";
 import TaskModal from "@/components/TaskModal";
 import { addDays, addMonthsKey, diffDays, todayKey, type DateKey } from "@/lib/date";
 import type { CalendarView, ThemeId } from "@/lib/settings";
-import { supabase } from "@/lib/supabase";
-import { TASK_COLUMNS, type NewTask, type Task } from "@/lib/types";
+import {
+  clearLocalData,
+  createStore,
+  localTaskCount,
+  migrateLocalToServer,
+} from "@/lib/store";
+import type { NewTask, Task } from "@/lib/types";
+import { useAuth } from "@/lib/useAuth";
 import { useSettings } from "@/lib/useSettings";
 
 /** 마감일 오름차순, 마감 없는 항목은 뒤로. 같으면 최근 등록 순. */
@@ -24,21 +32,111 @@ function byDueThenCreated(a: Task, b: Task) {
   return a.created_at < b.created_at ? 1 : -1;
 }
 
+const message = (e: unknown, fallback: string) =>
+  e instanceof Error ? e.message : fallback;
+
 export default function Page() {
   // 날짜에 의존하는 렌더는 하이드레이션 이후로 미룬다.
   const [today, setToday] = useState<DateKey | null>(null);
   /** 달력이 보고 있는 기준 날짜. 월간이면 이 날짜의 달, 주간이면 이 날짜가 속한 주. */
   const [anchor, setAnchor] = useState<DateKey | null>(null);
 
-  const { settings, update } = useSettings();
+  const { session, ready, userId, email, sendCode, verifyCode, signOut } = useAuth();
+  const store = useMemo(() => createStore(userId), [userId]);
+  const { settings, setSettings, update } = useSettings(store, ready);
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const [modalOpen, setModalOpen] = useState(false);
   /** null이면 추가 모드, Task가 담기면 그 항목 수정 모드 */
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  /** 로그인했는데 서버에도 로컬에도 데이터가 있어 합칠지 물어야 하는 상태 */
+  const [mergeCount, setMergeCount] = useState<number | null>(null);
+
+  /** 직전에 로그인 상태였는지 — 게스트→로그인 전환 순간만 잡아낸다. */
+  const prevUserId = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    const key = todayKey();
+    setToday(key);
+    setAnchor(key);
+  }, []);
+
+  const reload = useCallback(async () => {
+    setLoading(true);
+    try {
+      setTasks(await store.listTasks());
+      setError(null);
+    } catch (e) {
+      setError(message(e, "할 일을 불러오지 못했어요."));
+    } finally {
+      setLoading(false);
+    }
+  }, [store]);
+
+  // 게스트 → 로그인 전환 시 로컬 데이터를 어떻게 할지 먼저 정한다.
+  useEffect(() => {
+    if (!ready) return;
+
+    const before = prevUserId.current;
+    prevUserId.current = userId;
+
+    const justSignedIn = before === null && userId !== null;
+    if (!justSignedIn || !userId) {
+      void reload();
+      return;
+    }
+
+    (async () => {
+      setLoading(true);
+      try {
+        const serverTasks = await store.listTasks();
+        const localCount = localTaskCount();
+
+        if (localCount === 0) {
+          setTasks(serverTasks);
+        } else if (serverTasks.length === 0) {
+          // 처음 쓰는 계정 — 쓰던 내용이 그대로 이어지도록 설정까지 옮긴다.
+          await migrateLocalToServer(userId, { includeSettings: true });
+          setTasks(await store.listTasks());
+          setSettings(await store.loadSettings());
+        } else {
+          // 이미 데이터가 있는 계정 — 서버 것을 먼저 보여주고 합칠지 묻는다.
+          setTasks(serverTasks);
+          setMergeCount(localCount);
+        }
+        setError(null);
+      } catch (e) {
+        setError(message(e, "계정 데이터를 불러오지 못했어요."));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [ready, userId, store, reload, setSettings]);
+
+  const acceptMerge = useCallback(async () => {
+    if (!userId) return;
+    setMergeCount(null);
+    setLoading(true);
+    try {
+      await migrateLocalToServer(userId, { includeSettings: false });
+      setTasks(await store.listTasks());
+    } catch (e) {
+      setError(message(e, "합치지 못했어요."));
+    } finally {
+      setLoading(false);
+    }
+  }, [userId, store]);
+
+  const declineMerge = useCallback(() => {
+    // 거절하면 로컬 게스트 데이터는 버린다.
+    clearLocalData();
+    setMergeCount(null);
+  }, []);
 
   const openAdd = useCallback(() => {
     setEditingTask(null);
@@ -50,100 +148,65 @@ export default function Page() {
     setModalOpen(true);
   }, []);
 
-  useEffect(() => {
-    const key = todayKey();
-    setToday(key);
-    setAnchor(key);
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      const { data, error } = await supabase
-        .from("tasks")
-        .select(TASK_COLUMNS)
-        .order("created_at", { ascending: false });
-
-      if (cancelled) return;
-      if (error) setError(`할 일을 불러오지 못했어요: ${error.message}`);
-      else setTasks(data as Task[]);
-      setLoading(false);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   /** 추가와 수정을 한 곳에서 처리한다. editingTask가 있으면 update, 없으면 insert. */
   const submitTask = useCallback(
     async (draft: NewTask) => {
       setSaving(true);
       setError(null);
+      try {
+        const saved = editingTask
+          ? await store.updateTask(editingTask.id, draft)
+          : await store.addTask(draft);
 
-      const query = editingTask
-        ? supabase.from("tasks").update(draft).eq("id", editingTask.id)
-        : supabase.from("tasks").insert(draft);
-
-      const { data, error } = await query.select(TASK_COLUMNS).single();
-
-      setSaving(false);
-
-      if (error) {
-        setError(`저장에 실패했어요: ${error.message}`);
-        return;
+        setTasks((prev) =>
+          editingTask ? prev.map((t) => (t.id === saved.id ? saved : t)) : [saved, ...prev],
+        );
+        setModalOpen(false);
+      } catch (e) {
+        setError(message(e, "저장에 실패했어요."));
+      } finally {
+        setSaving(false);
       }
-
-      const saved = data as Task;
-      setTasks((prev) =>
-        editingTask
-          ? prev.map((t) => (t.id === saved.id ? saved : t))
-          : [saved, ...prev],
-      );
-      setModalOpen(false);
     },
-    [editingTask],
+    [editingTask, store],
   );
 
-  const deleteTask = useCallback(async (task: Task) => {
-    setSaving(true);
-    setError(null);
-
-    const { error } = await supabase.from("tasks").delete().eq("id", task.id);
-
-    setSaving(false);
-
-    if (error) {
-      setError(`삭제하지 못했어요: ${error.message}`);
-      return;
-    }
-
-    setTasks((prev) => prev.filter((t) => t.id !== task.id));
-    setModalOpen(false);
-  }, []);
+  const deleteTask = useCallback(
+    async (task: Task) => {
+      setSaving(true);
+      setError(null);
+      try {
+        await store.removeTask(task.id);
+        setTasks((prev) => prev.filter((t) => t.id !== task.id));
+        setModalOpen(false);
+      } catch (e) {
+        setError(message(e, "삭제하지 못했어요."));
+      } finally {
+        setSaving(false);
+      }
+    },
+    [store],
+  );
 
   /** 데이터를 옮기지 않고 is_done 값만 뒤집는다. */
-  const toggleTask = useCallback(async (task: Task) => {
-    const next = !task.is_done;
-    setError(null);
-    setTasks((prev) =>
-      prev.map((t) => (t.id === task.id ? { ...t, is_done: next } : t)),
-    );
+  const toggleTask = useCallback(
+    async (task: Task) => {
+      const next = !task.is_done;
+      setError(null);
+      setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, is_done: next } : t)));
 
-    const { error } = await supabase
-      .from("tasks")
-      .update({ is_done: next })
-      .eq("id", task.id);
-
-    if (error) {
-      // 실패하면 되돌린다.
-      setTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? { ...t, is_done: !next } : t)),
-      );
-      setError(`완료 상태를 바꾸지 못했어요: ${error.message}`);
-    }
-  }, []);
+      try {
+        await store.setDone(task.id, next);
+      } catch (e) {
+        // 실패하면 되돌린다.
+        setTasks((prev) =>
+          prev.map((t) => (t.id === task.id ? { ...t, is_done: !next } : t)),
+        );
+        setError(message(e, "완료 상태를 바꾸지 못했어요."));
+      }
+    },
+    [store],
+  );
 
   const tasksByDate = useMemo(() => {
     const map = new Map<DateKey, Task[]>();
@@ -190,8 +253,8 @@ export default function Page() {
     [view],
   );
 
-  // 설정이 준비되기 전에 그리면 저장해둔 테마·뷰와 다른 화면이 한 번 보인다.
-  if (!today || !anchor || !settings) {
+  // 설정·세션이 준비되기 전에 그리면 저장해둔 테마·뷰와 다른 화면이 한 번 보인다.
+  if (!today || !anchor || !settings || !ready) {
     return <div className="min-h-screen bg-canvas" />;
   }
 
@@ -201,12 +264,15 @@ export default function Page() {
         pendingCount={pending.length}
         dueTodayCount={dueTodayCount}
         doneCount={done.length}
+        email={email}
         plannerName={settings.planner_name}
         profileImage={settings.profile_image}
         theme={settings.theme}
-        onNameChange={(planner_name) => update({ planner_name })}
+        onNameChange={(planner_name) => void update({ planner_name })}
         onProfileChange={(dataUrl) => update({ profile_image: dataUrl })}
-        onThemeChange={(theme: ThemeId) => update({ theme })}
+        onThemeChange={(theme: ThemeId) => void update({ theme })}
+        onSignIn={() => setAuthOpen(true)}
+        onSignOut={() => void signOut()}
       />
 
       <main className="flex min-w-0 flex-1 items-start gap-5 p-6">
@@ -231,7 +297,7 @@ export default function Page() {
               date={settings.counter_date}
               today={today}
               onSave={(counter_label, counter_date) =>
-                update({ counter_label, counter_date })
+                void update({ counter_label, counter_date })
               }
             />
             <BannerCard
@@ -248,7 +314,7 @@ export default function Page() {
             onPrev={() => step(-1)}
             onNext={() => step(1)}
             onToday={() => setAnchor(todayKey())}
-            onViewChange={(next) => update({ calendar_view: next })}
+            onViewChange={(next) => void update({ calendar_view: next })}
             onSelect={openEdit}
             onAdd={openAdd}
           />
@@ -283,6 +349,22 @@ export default function Page() {
         onClose={() => setModalOpen(false)}
         onSubmit={submitTask}
         onDelete={deleteTask}
+      />
+
+      <AuthModal
+        open={authOpen && !session}
+        onClose={() => setAuthOpen(false)}
+        onSend={sendCode}
+        onVerify={async (mail, code) => {
+          await verifyCode(mail, code);
+          setAuthOpen(false);
+        }}
+      />
+
+      <MergePrompt
+        count={mergeCount}
+        onAccept={() => void acceptMerge()}
+        onDecline={declineMerge}
       />
     </div>
   );

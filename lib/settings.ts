@@ -44,6 +44,13 @@ export const DEFAULT_SETTINGS: Settings = {
 
 export const SETTINGS_KEY = "my-planner:settings";
 
+/**
+ * 첫 페인트용 테마 캐시.
+ * 로그인 상태에서는 설정이 서버에 있어 불러오기 전까지 테마를 알 수 없다.
+ * 마지막으로 쓴 테마만 따로 남겨두고 부팅 스크립트가 이걸 먼저 본다.
+ */
+export const THEME_CACHE_KEY = "my-planner:theme";
+
 const THEME_IDS: string[] = THEMES.map((t) => t.id);
 
 const asDataUrl = (v: unknown) =>
@@ -52,7 +59,11 @@ const asDataUrl = (v: unknown) =>
 const asText = (v: unknown, max: number, fallback: string) =>
   typeof v === "string" ? v.slice(0, max) : fallback;
 
-function coerce(raw: unknown): Settings {
+/**
+ * localStorage에서 읽은 값과 서버 settings 행을 같은 모양으로 정규화한다.
+ * 손상된 값이나 손으로 고친 값이 들어와도 기본값으로 떨어진다.
+ */
+export function coerceSettings(raw: unknown): Settings {
   if (!raw || typeof raw !== "object") return DEFAULT_SETTINGS;
   const v = raw as Partial<Settings>;
   return {
@@ -74,34 +85,7 @@ function coerce(raw: unknown): Settings {
   };
 }
 
-export function loadSettings(): Settings {
-  if (typeof window === "undefined") return DEFAULT_SETTINGS;
-  try {
-    const raw = window.localStorage.getItem(SETTINGS_KEY);
-    return raw ? coerce(JSON.parse(raw)) : DEFAULT_SETTINGS;
-  } catch {
-    // 손상된 값이나 접근 차단(프라이빗 모드 등)은 기본값으로 넘긴다.
-    return DEFAULT_SETTINGS;
-  }
-}
-
 export type SaveResult = { ok: true } | { ok: false; message: string };
-
-export function saveSettings(settings: Settings): SaveResult {
-  try {
-    window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    return { ok: true };
-  } catch (e) {
-    // 이미지까지 넣으면 저장소 용량(보통 5MB)에 걸릴 수 있다.
-    const quota = e instanceof DOMException && e.name.includes("Quota");
-    return {
-      ok: false,
-      message: quota
-        ? "브라우저 저장 공간이 부족해요. 프로필 사진을 지우고 다시 시도해보세요."
-        : "설정을 저장하지 못했어요.",
-    };
-  }
-}
 
 /**
  * 첫 페인트 전에 <html data-theme>을 맞춰두는 인라인 스크립트.
@@ -109,8 +93,12 @@ export function saveSettings(settings: Settings): SaveResult {
  */
 export const THEME_BOOT_SCRIPT = `
 try{
-  var s=JSON.parse(localStorage.getItem(${JSON.stringify(SETTINGS_KEY)})||"{}");
-  var t=${JSON.stringify(THEME_IDS)}.indexOf(s.theme)>=0?s.theme:${JSON.stringify(DEFAULT_SETTINGS.theme)};
+  var ids=${JSON.stringify(THEME_IDS)};
+  var t=localStorage.getItem(${JSON.stringify(THEME_CACHE_KEY)});
+  if(ids.indexOf(t)<0){
+    var s=JSON.parse(localStorage.getItem(${JSON.stringify(SETTINGS_KEY)})||"{}");
+    t=ids.indexOf(s.theme)>=0?s.theme:${JSON.stringify(DEFAULT_SETTINGS.theme)};
+  }
   document.documentElement.dataset.theme=t;
 }catch(e){document.documentElement.dataset.theme=${JSON.stringify(DEFAULT_SETTINGS.theme)}}
 `.trim();

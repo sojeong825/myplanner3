@@ -9,7 +9,12 @@ if (!url || !key) {
   );
 }
 
-// 로그인이 스코프 밖이라 세션을 유지할 필요가 없다.
 export const supabase = createClient(url, key, {
-  auth: { persistSession: false, autoRefreshToken: false },
+  auth: {
+    // 세션을 브라우저에 남겨 다시 열어도 로그인 상태가 유지되게 한다.
+    persistSession: true,
+    autoRefreshToken: true,
+    // 메일의 매직링크로 돌아왔을 때 URL의 토큰을 세션으로 바꿔준다.
+    detectSessionInUrl: true,
+  },
 });

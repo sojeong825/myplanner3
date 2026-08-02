@@ -6,7 +6,7 @@ import type { SaveResult } from "@/lib/settings";
 
 type Props = {
   image: string | null;
-  onChange: (dataUrl: string | null) => SaveResult;
+  onChange: (dataUrl: string | null) => Promise<SaveResult>;
 };
 
 /** 프로필 사진과 같은 업로드 경로를 쓰되, 정사각형 대신 배너 비율로 줄여 저장한다. */
@@ -28,7 +28,7 @@ export default function BannerCard({ image, onChange }: Props) {
     setBusy(true);
     try {
       const dataUrl = await fileToBannerDataUrl(file);
-      const saved = onChange(dataUrl);
+      const saved = await onChange(dataUrl);
       if (!saved.ok) setError(saved.message);
     } catch (e) {
       setError(e instanceof Error ? e.message : "이미지를 처리하지 못했어요.");
@@ -76,11 +76,11 @@ export default function BannerCard({ image, onChange }: Props) {
           </button>
           <button
             type="button"
-            onClick={() => {
+            onClick={async () => {
               setError(null);
-              const saved = onChange(null);
+              const saved = await onChange(null);
               if (!saved.ok) setError(saved.message);
-            }}
+              }}
             className="rounded-full bg-card/85 px-3 py-1.5 text-[11px] text-ink-soft backdrop-blur-sm transition hover:bg-card hover:text-ink"
           >
             삭제

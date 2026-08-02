@@ -6,7 +6,7 @@ import type { SaveResult } from "@/lib/settings";
 
 type Props = {
   image: string | null;
-  onChange: (dataUrl: string | null) => SaveResult;
+  onChange: (dataUrl: string | null) => Promise<SaveResult>;
 };
 
 export default function ProfileAvatar({ image, onChange }: Props) {
@@ -48,7 +48,7 @@ export default function ProfileAvatar({ image, onChange }: Props) {
     setBusy(true);
     try {
       const dataUrl = await fileToSquareDataUrl(file);
-      const saved = onChange(dataUrl);
+      const saved = await onChange(dataUrl);
       if (!saved.ok) setError(saved.message);
     } catch (e) {
       setError(e instanceof Error ? e.message : "이미지를 처리하지 못했어요.");
@@ -111,12 +111,12 @@ export default function ProfileAvatar({ image, onChange }: Props) {
           <button
             type="button"
             role="menuitem"
-            onClick={() => {
+            onClick={async () => {
               setMenuOpen(false);
               setError(null);
-              const saved = onChange(null);
+              const saved = await onChange(null);
               if (!saved.ok) setError(saved.message);
-            }}
+              }}
             className="block w-full px-3 py-2 text-left text-[12px] text-ink-soft transition hover:bg-soft hover:text-ink"
           >
             사진 삭제
