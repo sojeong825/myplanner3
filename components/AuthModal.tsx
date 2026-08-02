@@ -87,8 +87,8 @@ export default function AuthModal({ open, onClose, onSend, onVerify }: Props) {
         </h2>
         <p className="mt-2 break-keep text-[12px] leading-relaxed text-ink-soft">
           {step === "email"
-            ? "비밀번호는 만들지 않아요. 입력하신 주소로 인증 코드를 보내드릴게요."
-            : `${email} 로 보낸 6자리 코드를 입력해주세요.`}
+            ? "비밀번호는 만들지 않아요. 입력하신 주소로 인증 메일을 보내드릴게요."
+            : `${email} 로 메일을 보냈어요.`}
         </p>
 
         <div className="mt-5 space-y-5">
@@ -107,18 +107,33 @@ export default function AuthModal({ open, onClose, onSend, onVerify }: Props) {
               />
             </label>
           ) : (
-            <label className="block">
-              <span className="text-[12px] text-ink-soft">인증 코드</span>
-              <input
-                ref={codeRef}
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
-                placeholder="000000"
-                className="mt-1.5 w-full rounded-lg border border-line bg-canvas px-3 py-2.5 text-center font-mono text-[18px] tracking-[0.4em] outline-none placeholder:text-ink-faint focus:border-accent"
-              />
-            </label>
+            <>
+              {/*
+                메일에 무엇이 담기는지는 Supabase 이메일 템플릿 설정에 달렸다.
+                기본 템플릿은 링크만 보내므로 링크 안내를 먼저 두고, 코드는 선택으로 받는다.
+              */}
+              <div className="rounded-lg border border-line bg-soft/50 px-3.5 py-3">
+                <p className="break-keep text-[12px] leading-relaxed text-ink">
+                  메일 속 <strong className="font-medium">링크를 누르면 바로 로그인</strong>
+                  돼요. 이 창은 그대로 두셔도 됩니다.
+                </p>
+              </div>
+
+              <label className="block">
+                <span className="text-[12px] text-ink-soft">
+                  6자리 코드를 받으셨다면 (선택)
+                </span>
+                <input
+                  ref={codeRef}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+                  placeholder="000000"
+                  className="mt-1.5 w-full rounded-lg border border-line bg-canvas px-3 py-2.5 text-center font-mono text-[18px] tracking-[0.4em] outline-none placeholder:text-ink-faint focus:border-accent"
+                />
+              </label>
+            </>
           )}
 
           {error && (
@@ -138,13 +153,13 @@ export default function AuthModal({ open, onClose, onSend, onVerify }: Props) {
               disabled={!canSubmit}
               className="flex-1 rounded-full bg-accent py-2.5 text-[13px] font-medium text-white transition hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {busy ? "확인 중…" : step === "email" ? "인증 코드 받기" : "로그인"}
+              {busy ? "확인 중…" : step === "email" ? "인증 메일 받기" : "코드로 로그인"}
             </button>
           </div>
 
           {step === "code" && (
             <p className="break-keep text-center text-[11px] leading-relaxed text-ink-faint">
-              메일 속 링크를 눌러도 로그인돼요. 코드가 안 보이면 스팸함을 확인해주세요.
+              메일이 안 보이면 스팸함을 확인해주세요.
             </p>
           )}
         </div>
