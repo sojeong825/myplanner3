@@ -10,6 +10,30 @@ type Props = {
 };
 
 /**
+ * Supabase가 돌려주는 영문 메시지를 그대로 보여주면 뭘 해야 할지 알 수 없다.
+ * 자주 나오는 것만 한국어 안내로 바꾸고, 나머지는 원문을 남긴다.
+ */
+function readableError(raw: string): string {
+  const m = raw.toLowerCase();
+
+  if (m.includes("rate limit") || m.includes("over_email_send_rate_limit")) {
+    return "메일 발송 한도를 넘었어요. 잠시 뒤에 다시 시도해주세요.";
+  }
+  // "For security purposes, you can only request this after 45 seconds."
+  const seconds = raw.match(/after (\d+) seconds?/i);
+  if (seconds) {
+    return `${seconds[1]}초 뒤에 다시 시도해주세요.`;
+  }
+  if (m.includes("token has expired") || m.includes("invalid")) {
+    return "코드가 만료됐거나 올바르지 않아요. 메일을 다시 받아주세요.";
+  }
+  if (m.includes("signups not allowed") || m.includes("signup is disabled")) {
+    return "지금은 가입이 막혀 있어요.";
+  }
+  return raw;
+}
+
+/**
  * 이메일 인증 한 화면. 가입과 로그인을 구분하지 않는다 —
  * 처음 인증한 이메일이면 자동 가입되고, 기존 이메일이면 로그인된다.
  */
@@ -66,7 +90,7 @@ export default function AuthModal({ open, onClose, onSend, onVerify }: Props) {
         await onVerify(email, code);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "다시 시도해주세요.");
+      setError(readableError(err instanceof Error ? err.message : "다시 시도해주세요."));
     } finally {
       setBusy(false);
     }
