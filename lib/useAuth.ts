@@ -4,12 +4,16 @@ import { useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
-/**
- * 이메일 인증만 쓰는 로그인. 비밀번호를 만들지 않는다(패스워드리스).
- *
- * 가입과 로그인을 구분하지 않는다 — 처음 인증한 이메일이면 자동 가입,
- * 기존 이메일이면 로그인으로 이어진다.
- */
+export const PASSWORD_MIN = 6;
+
+/** 가입은 됐지만 이메일 확인이 남아 로그인되지 않은 상태 */
+export class NeedsEmailConfirm extends Error {
+  constructor() {
+    super("가입은 됐어요. 메일로 보낸 링크를 눌러 확인해주세요.");
+  }
+}
+
+/** 이메일 + 비밀번호 로그인. */
 export function useAuth() {
   /** undefined = 아직 확인 중, null = 게스트 */
   const [session, setSession] = useState<Session | null | undefined>(undefined);
@@ -24,26 +28,23 @@ export function useAuth() {
     return () => data.subscription.unsubscribe();
   }, []);
 
-  /** 인증 메일 보내기. 계정이 없으면 이 단계에서 만들어진다. */
-  const sendCode = useCallback(async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({
+  const signIn = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
-      },
+      password,
     });
     if (error) throw new Error(error.message);
   }, []);
 
-  /** 메일로 받은 6자리 코드 확인 */
-  const verifyCode = useCallback(async (email: string, token: string) => {
-    const { error } = await supabase.auth.verifyOtp({
+  const signUp = useCallback(async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
-      token: token.trim(),
-      type: "email",
+      password,
     });
     if (error) throw new Error(error.message);
+
+    // 프로젝트에서 이메일 확인을 켜뒀으면 세션 없이 사용자만 만들어진다.
+    if (!data.session) throw new NeedsEmailConfirm();
   }, []);
 
   const signOut = useCallback(async () => {
@@ -56,8 +57,8 @@ export function useAuth() {
     ready: session !== undefined,
     userId: session?.user.id ?? null,
     email: session?.user.email ?? null,
-    sendCode,
-    verifyCode,
+    signIn,
+    signUp,
     signOut,
   };
 }

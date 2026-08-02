@@ -41,7 +41,7 @@ export default function Page() {
   /** 달력이 보고 있는 기준 날짜. 월간이면 이 날짜의 달, 주간이면 이 날짜가 속한 주. */
   const [anchor, setAnchor] = useState<DateKey | null>(null);
 
-  const { session, ready, userId, email, sendCode, verifyCode, signOut } = useAuth();
+  const { session, ready, userId, email, signIn, signUp, signOut } = useAuth();
   const store = useMemo(() => createStore(userId), [userId]);
   const { settings, setSettings, update } = useSettings(store, ready);
 
@@ -354,9 +354,12 @@ export default function Page() {
       <AuthModal
         open={authOpen && !session}
         onClose={() => setAuthOpen(false)}
-        onSend={sendCode}
-        onVerify={async (mail, code) => {
-          await verifyCode(mail, code);
+        onSignIn={async (mail, password) => {
+          await signIn(mail, password);
+          setAuthOpen(false);
+        }}
+        onSignUp={async (mail, password) => {
+          await signUp(mail, password);
           setAuthOpen(false);
         }}
       />
