@@ -331,8 +331,13 @@ export default function Page() {
           />
         </div>
 
-        {/* 가운데가 길어져도 계속 보이도록 붙여둔다. */}
-        <div className="sticky top-6 flex max-h-[calc(100vh-3rem)] w-[300px] shrink-0 flex-col gap-5">
+        {/*
+          가운데가 길어져도 계속 보이도록 붙여둔다.
+          overflow-hidden은 필수다. 안쪽 목록이 max-h를 넘긴 만큼은 카드 안에서 잘려
+          보이지 않는데도 문서 스크롤 높이에는 그대로 더해져서, 목록이 길어지면
+          화면에 아무것도 없는 여백이 아래로 길게 생긴다.
+        */}
+        <div className="sticky top-6 flex max-h-[calc(100vh-3rem)] w-[300px] shrink-0 flex-col gap-5 overflow-hidden">
           {loading ? (
             <div className="h-40 animate-pulse rounded-card border border-line bg-card" />
           ) : (

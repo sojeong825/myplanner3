@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { todayKey } from "@/lib/date";
 import {
   currentAccent,
   DEFAULT_ICON,
@@ -54,7 +55,8 @@ export default function TaskModal({
   useEffect(() => {
     if (!open) return;
     setTitle(task?.title ?? "");
-    setDates(task?.due_date ? [task.due_date] : []);
+    // 추가는 오늘로 미리 채워둔다 — 대부분 오늘 기준으로 잡으니, 아니면 칩을 빼고 다시 고르면 된다.
+    setDates(task ? (task.due_date ? [task.due_date] : []) : [todayKey()]);
     setIcon(toIconName(task?.icon));
     setColor(task?.icon_color ?? null);
     setConfirmOpen(false);

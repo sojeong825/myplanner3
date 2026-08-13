@@ -3,6 +3,12 @@
 import { TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
+/**
+ * 완료 목록에 한 번에 띄울 최대 개수.
+ * 다 쌓아두면 남은 할 일이 밀려나기만 해서 최근 것만 남기고, 전체 개수는 라벨에 적는다.
+ */
+const DONE_LIMIT = 10;
+
 type Props = {
   pending: Task[];
   done: Task[];
@@ -109,9 +115,12 @@ export default function TaskList({ pending, done, onToggle, onSelect, onAdd }: P
 
           {done.length > 0 && (
             <div>
-              <p className="px-1 pb-1.5 text-[11px] text-ink-faint">완료 {done.length}</p>
+              <p className="px-1 pb-1.5 text-[11px] text-ink-faint">
+                완료 {done.length}
+                {done.length > DONE_LIMIT && ` · 최근 ${DONE_LIMIT}개`}
+              </p>
               <ul className="flex flex-col gap-2">
-                {done.map((task) => (
+                {done.slice(0, DONE_LIMIT).map((task) => (
                   <Row key={task.id} task={task} onToggle={onToggle} onSelect={onSelect} />
                 ))}
               </ul>
