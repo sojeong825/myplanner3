@@ -43,6 +43,47 @@ export const ICON_COLORS: { label: string; value: string }[] = [
   { label: "그레이", value: "#A3A3AD" },
 ];
 
+function toRgb(hex: string): [number, number, number] | null {
+  const m = /^#([0-9A-Fa-f]{6})$/.exec(hex.trim());
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/**
+ * '같은 색'으로 볼 RGB 거리. 값이 정확히 같지 않아도 눈으로 구분되지 않는 쌍이 있어서,
+ * 정확히 일치하는 것만 걸러내면 cream·gray 테마에서 똑같아 보이는 동그라미가 남는다.
+ *
+ * 테마 accent ↔ 프리셋 거리를 전부 재보면 이렇게 갈린다.
+ *
+ *   pink·lavender·mint ↔ 같은 이름 프리셋      →  0    (값이 정확히 같음)
+ *   gray   #9797A4     ↔ 그레이 #A3A3AD        → 19.2
+ *   cream  #DDB673     ↔ 옐로우 #E8C46B        → 19.5
+ *   ────────────── 여기까지가 중복 ──────────────
+ *   lavender #ADA0D9   ↔ 블루 #8FB8DE          → 38.7  (보라 vs 하늘색 — 남겨야 한다)
+ *   lavender #ADA0D9   ↔ 그레이 #A3A3AD        → 45.2
+ *
+ * 그래서 30이면 위 셋만 빠지고 구분되는 색은 전부 남는다.
+ * 프리셋이나 테마 색을 새로 넣을 때는 이 표를 다시 확인할 것.
+ */
+const SAME_COLOR_DISTANCE = 30;
+
+/**
+ * 팔레트에서 지금 테마의 --accent와 같아 보이는 색은 뺀다.
+ * 맨 앞 '테마 기본' 동그라미가 이미 그 색이라, 두면 같은 색이 두 번 나온다.
+ */
+export function paletteFor(accent: string) {
+  const target = toRgb(accent);
+  if (!target) return ICON_COLORS;
+
+  return ICON_COLORS.filter((c) => {
+    const rgb = toRgb(c.value);
+    if (!rgb) return true;
+    const d = Math.hypot(rgb[0] - target[0], rgb[1] - target[1], rgb[2] - target[2]);
+    return d >= SAME_COLOR_DISTANCE;
+  });
+}
+
 export function toIconName(value: string | null | undefined): TaskIconName {
   return value && value in TASK_ICONS ? (value as TaskIconName) : DEFAULT_ICON;
 }

@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { todayKey } from "@/lib/date";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   currentAccent,
   DEFAULT_ICON,
-  ICON_COLORS,
   ICON_LABELS,
   ICON_ORDER,
+  paletteFor,
   TaskIcon,
   toIconName,
   type TaskIconName,
@@ -42,6 +41,8 @@ export default function TaskModal({
    * 수정은 이미 있는 한 건을 고치는 거라 항상 0~1개만 담는다.
    */
   const [dates, setDates] = useState<string[]>([]);
+  /** 공백만 남으면 저장할 때 null로 바꾼다. */
+  const [memo, setMemo] = useState("");
   const [icon, setIcon] = useState<TaskIconName>(DEFAULT_ICON);
   /** null이면 '테마 기본' — 저장할 때 현재 --accent 값으로 굳는다. */
   const [color, setColor] = useState<string | null>(null);
@@ -51,12 +52,19 @@ export default function TaskModal({
 
   const editing = task !== null;
 
+  /**
+   * 열려 있는 동안의 --accent 값. 열릴 때 한 번만 읽는다.
+   * 모달이 떠 있는 사이에는 테마를 바꿀 수 없으니(테마 선택은 사이드바에 있다) 이걸로 충분하다.
+   */
+  const accent = useMemo(() => (open ? currentAccent() : ""), [open]);
+  const palette = useMemo(() => paletteFor(accent), [accent]);
+
   // 열릴 때마다 상태를 초기화한다. 수정이면 저장된 값으로 채운다.
   useEffect(() => {
     if (!open) return;
     setTitle(task?.title ?? "");
-    // 추가는 오늘로 미리 채워둔다 — 대부분 오늘 기준으로 잡으니, 아니면 칩을 빼고 다시 고르면 된다.
-    setDates(task ? (task.due_date ? [task.due_date] : []) : [todayKey()]);
+    setDates(task?.due_date ? [task.due_date] : []);
+    setMemo(task?.memo ?? "");
     setIcon(toIconName(task?.icon));
     setColor(task?.icon_color ?? null);
     setConfirmOpen(false);
@@ -94,7 +102,9 @@ export default function TaskModal({
     const base = {
       title: title.trim(),
       icon,
-      icon_color: color ?? currentAccent(),
+      icon_color: color ?? accent,
+      // 공백만 남은 메모는 '메모 없음'과 같으므로 null로 통일한다.
+      memo: memo.trim() || null,
     };
 
     // 마감일은 선택 항목 — 하나도 없으면 마감 없는 할 일 한 건으로 저장한다.
@@ -197,6 +207,19 @@ export default function TaskModal({
             )}
           </div>
 
+          <label className="block">
+            <span className="text-[12px] text-ink-soft">메모 (선택)</span>
+            <textarea
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              placeholder="예) 세제랑 수세미 사오기"
+              maxLength={500}
+              rows={2}
+              // resize-none: 사용자가 늘리면 모달 바깥으로 삐져나온다. 넘치면 안에서 스크롤된다.
+              className="mt-1.5 w-full resize-none rounded-lg border border-line bg-canvas px-3 py-2.5 text-[13px] leading-relaxed outline-none placeholder:text-ink-faint focus:border-accent"
+            />
+          </label>
+
           <div>
             <span className="text-[12px] text-ink-soft">아이콘</span>
             <div role="radiogroup" aria-label="아이콘" className="mt-1.5 flex gap-2">
@@ -235,7 +258,7 @@ export default function TaskModal({
                   color === null ? "ring-2 ring-ink-soft ring-offset-2 ring-offset-card" : ""
                 }`}
               />
-              {ICON_COLORS.map((c) => (
+              {palette.map((c) => (
                 <button
                   key={c.value}
                   type="button"

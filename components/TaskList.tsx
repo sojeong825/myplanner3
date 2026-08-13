@@ -53,7 +53,8 @@ function Row({
       <button
         type="button"
         onClick={() => onSelect(task)}
-        title={task.title}
+        // 메모는 목록에 펼치면 줄이 길어져서, 확인만 되도록 hover 툴팁으로 붙인다.
+        title={task.memo ? `${task.title}\n${task.memo}` : task.title}
         className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 text-left"
       >
         <TaskIcon icon={task.icon} color={task.icon_color} done={task.is_done} />

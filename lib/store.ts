@@ -91,6 +91,7 @@ const guestStore: Store = {
       created_at: new Date(now + i).toISOString(),
       icon: draft.icon,
       icon_color: draft.icon_color,
+      memo: draft.memo,
     }));
 
     writeLocalTasks([...created.slice().reverse(), ...tasks]);
@@ -221,6 +222,8 @@ export async function migrateLocalToServer(
       is_done: t.is_done,
       icon: t.icon,
       icon_color: t.icon_color,
+      // 게스트 때 쓰던 컬럼이 나중에 생겼을 수 있으니 없으면 null로 채운다.
+      memo: t.memo ?? null,
       created_at: t.created_at,
     }));
     const { error } = await supabase.from("tasks").insert(rows);

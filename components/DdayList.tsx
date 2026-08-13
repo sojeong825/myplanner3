@@ -32,7 +32,7 @@ export default function DdayList({ tasks, today, onSelect }: Props) {
                 <button
                   type="button"
                   onClick={() => onSelect(task)}
-                  title={task.title}
+                  title={task.memo ? `${task.title}\n${task.memo}` : task.title}
                   className="flex w-full cursor-pointer items-center gap-2 rounded-[10px] bg-card px-3 py-2.5 text-left transition hover:bg-canvas"
                 >
                   <TaskIcon icon={task.icon} color={task.icon_color} />
