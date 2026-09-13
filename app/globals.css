@@ -117,6 +117,84 @@
   --accent-deep: #7a7a88;
 }
 
+/* ── v1.3 추가 4종. 위 다섯 개와 같은 구조를 그대로 따른다. ── */
+
+:root[data-theme="blue"] {
+  --bg-gradient: linear-gradient(180deg, #eef3fa 0%, #ffffff 45%, #f2f6fb 100%);
+  --canvas: #f3f6fa;
+  --card: #ffffff;
+  --line: #e3ebf3;
+  --line-soft: #eff4f9;
+
+  --ink: #41505f;
+  --ink-mid: #5f7180;
+  --ink-soft: #8698a8;
+  --ink-faint: #b6c4d1;
+
+  --soft: #e9f1f9;
+  --soft-deep: #d8e6f2;
+
+  --accent: #8fb8de;
+  --accent-deep: #6a99c6;
+}
+
+:root[data-theme="sage"] {
+  --bg-gradient: linear-gradient(180deg, #f0f5ee 0%, #ffffff 45%, #f5f5ee 100%);
+  --canvas: #f4f7f2;
+  --card: #ffffff;
+  --line: #e6eee2;
+  --line-soft: #f0f5ed;
+
+  --ink: #47513f;
+  --ink-mid: #67725d;
+  --ink-soft: #8d9884;
+  --ink-faint: #bcc6b3;
+
+  --soft: #ecf3e9;
+  --soft-deep: #dde9d8;
+
+  --accent: #9bb894;
+  --accent-deep: #7a9c72;
+}
+
+:root[data-theme="coral"] {
+  --bg-gradient: linear-gradient(180deg, #fdf0ec 0%, #ffffff 45%, #fdf3ec 100%);
+  --canvas: #fbf5f2;
+  --card: #ffffff;
+  --line: #f5e5df;
+  --line-soft: #faefea;
+
+  --ink: #5f4740;
+  --ink-mid: #826860;
+  --ink-soft: #a98d84;
+  --ink-faint: #d2bdb5;
+
+  --soft: #fbeae4;
+  --soft-deep: #f6d9d0;
+
+  --accent: #e39b89;
+  --accent-deep: #c9765f;
+}
+
+:root[data-theme="mocha"] {
+  --bg-gradient: linear-gradient(180deg, #f7f1ec 0%, #ffffff 45%, #f6f2ed 100%);
+  --canvas: #f7f3ef;
+  --card: #ffffff;
+  --line: #ece2da;
+  --line-soft: #f4ede7;
+
+  --ink: #52453d;
+  --ink-mid: #72645b;
+  --ink-soft: #9a8b81;
+  --ink-faint: #c7b9af;
+
+  --soft: #f2e9e2;
+  --soft-deep: #e6d8cd;
+
+  --accent: #a98c7d;
+  --accent-deep: #8a6c5d;
+}
+
 /*
  * 삭제처럼 뜻이 정해진 색은 테마를 따라가지 않는다.
  * 민트 테마에서 삭제가 초록이면 위험 신호로 읽히지 않는다.
@@ -180,6 +258,21 @@ body {
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--line) transparent;
+}
+
+/*
+ * 이모지 전용 폰트 스택.
+ *
+ * 본문 폰트가 조선굴림체라 이모지 글리프가 없다. 지정하지 않으면 브라우저가 알아서
+ * 대체 폰트를 고르는데, 그 결과가 OS·브라우저마다 달라 크기와 세로 정렬이 흔들린다.
+ * font-variant-emoji는 ❤️·✉️처럼 흑백(텍스트) 모양도 가진 이모지가 컬러로 그려지게 한다.
+ */
+.emoji {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji",
+    "Segoe UI Symbol", sans-serif;
+  font-variant-emoji: emoji;
+  /* 이모지는 자간을 벌리면 뒤따르는 글자와 사이가 뜬다 — 달력 자간 설정을 받지 않는다. */
+  letter-spacing: normal;
 }
 
 /* 날짜 입력의 기본 달력 아이콘을 톤에 맞게 흐리게 */

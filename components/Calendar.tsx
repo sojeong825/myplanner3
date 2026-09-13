@@ -13,6 +13,9 @@ type Props = {
   today: DateKey;
   /** 마감일 기준으로 묶은 Task. 달력은 저장된 데이터가 아니라 이 파생 뷰를 그린다. */
   tasksByDate: Map<DateKey, Task[]>;
+  /** 사용자가 고른 날짜 칸. '+ 일정 추가'가 이 날짜로 채워진다. null이면 고른 것 없음. */
+  selectedDate: DateKey | null;
+  onSelectDate: (key: DateKey) => void;
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
@@ -79,6 +82,8 @@ export default function Calendar({
   view,
   today,
   tasksByDate,
+  selectedDate,
+  onSelectDate,
   onPrev,
   onNext,
   onToday,
@@ -91,43 +96,60 @@ export default function Calendar({
 
   return (
     <section className="flex flex-col rounded-card border border-line bg-card shadow-card">
-      <header className="flex items-center gap-3 px-6 py-5">
-        <button
-          type="button"
-          onClick={onToday}
-          className="rounded-full border border-line px-3 py-1 text-[12px] text-ink-soft transition hover:bg-soft hover:text-ink"
-        >
-          오늘
-        </button>
-        <ArrowButton
-          dir="prev"
-          onClick={onPrev}
-          label={view === "month" ? "이전 달" : "이전 주"}
-        />
-        <ArrowButton
-          dir="next"
-          onClick={onNext}
-          label={view === "month" ? "다음 달" : "다음 주"}
-        />
-
-        <h2 className="ml-1 whitespace-nowrap text-[19px] font-medium tracking-tight">{title}</h2>
-
-        <div className="ml-auto flex items-center gap-2">
-          <ViewToggle value={view} onChange={onViewChange} />
+      <header className="px-6 py-5">
+        <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={onAdd}
-            className="rounded-full bg-accent px-4 py-2 text-[13px] font-medium text-white transition hover:bg-accent-deep"
+            onClick={onToday}
+            className="rounded-full border border-line px-3 py-1 text-[12px] text-ink-soft transition hover:bg-soft hover:text-ink"
           >
-            + 일정 추가
+            오늘
           </button>
+          <ArrowButton
+            dir="prev"
+            onClick={onPrev}
+            label={view === "month" ? "이전 달" : "이전 주"}
+          />
+          <ArrowButton
+            dir="next"
+            onClick={onNext}
+            label={view === "month" ? "다음 달" : "다음 주"}
+          />
+
+          <h2 className="ml-1 whitespace-nowrap text-[19px] font-medium tracking-tight">{title}</h2>
+
+          <div className="ml-auto flex items-center gap-2">
+            <ViewToggle value={view} onChange={onViewChange} />
+            <button
+              type="button"
+              onClick={onAdd}
+              className="rounded-full bg-accent px-4 py-2 text-[13px] font-medium text-white transition hover:bg-accent-deep"
+            >
+              + 일정 추가
+            </button>
+          </div>
         </div>
       </header>
 
       {view === "month" ? (
-        <MonthGrid year={y} month={m} today={today} tasksByDate={tasksByDate} onSelect={onSelect} />
+        <MonthGrid
+          year={y}
+          month={m}
+          today={today}
+          tasksByDate={tasksByDate}
+          selectedDate={selectedDate}
+          onSelectDate={onSelectDate}
+          onSelect={onSelect}
+        />
       ) : (
-        <WeekGrid anchor={anchor} today={today} tasksByDate={tasksByDate} onSelect={onSelect} />
+        <WeekGrid
+          anchor={anchor}
+          today={today}
+          tasksByDate={tasksByDate}
+          selectedDate={selectedDate}
+          onSelectDate={onSelectDate}
+          onSelect={onSelect}
+        />
       )}
     </section>
   );

@@ -1,22 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  currentAccent,
-  DEFAULT_ICON,
-  ICON_LABELS,
-  ICON_ORDER,
-  paletteFor,
-  TaskIcon,
-  toIconName,
-  type TaskIconName,
-} from "@/lib/icons";
+import { useEffect, useRef, useState } from "react";
+import DatePicker from "@/components/DatePicker";
+import { autoIcon } from "@/lib/autoIcon";
+import { categoryName, type Category } from "@/lib/categories";
+import type { DateKey } from "@/lib/date";
+import { StarButton, TaskIcon } from "@/lib/icons";
 import type { NewTask, Task } from "@/lib/types";
 
 type Props = {
   open: boolean;
   /** null이면 추가, Task가 오면 그 할 일을 수정한다. */
   task: Task | null;
+  /** 추가 모드에서 미리 고를 날짜. 달력에서 고른 칸이 여기로 온다. */
+  initialDate: string | null;
+  today: DateKey;
+  categories: Category[];
   saving: boolean;
   onClose: () => void;
   /** 마감일을 여러 개 고르면 날짜 수만큼 넘어온다. */
@@ -24,12 +23,12 @@ type Props = {
   onDelete: (task: Task) => void;
 };
 
-/** '2026-08-04' → '08/04' */
-const shortDate = (key: string) => key.slice(5).replace("-", "/");
-
 export default function TaskModal({
   open,
   task,
+  initialDate,
+  today,
+  categories,
   saving,
   onClose,
   onSubmit,
@@ -37,39 +36,36 @@ export default function TaskModal({
 }: Props) {
   const [title, setTitle] = useState("");
   /**
-   * 추가할 때는 여러 날짜를 골라 한 번에 여러 건을 만든다.
-   * 수정은 이미 있는 한 건을 고치는 거라 항상 0~1개만 담는다.
+   * 고른 마감일들. 비어 있으면 마감 없음.
+   *
+   * 달력 칸을 직접 누른 것만 여기 들어온다. 네이티브 <input type="date">를 쓸 때는
+   * 달을 넘기는 것만으로도 change가 올라와서 고르지도 않은 날짜가 값이 됐다.
+   * 추가할 때는 누른 만큼 쌓이고(날짜 수만큼 할 일이 만들어진다), 수정할 때는 한 개다.
    */
-  const [dates, setDates] = useState<string[]>([]);
+  const [dates, setDates] = useState<DateKey[]>([]);
   /** 공백만 남으면 저장할 때 null로 바꾼다. */
   const [memo, setMemo] = useState("");
-  const [icon, setIcon] = useState<TaskIconName>(DEFAULT_ICON);
-  /** null이면 '테마 기본' — 저장할 때 현재 --accent 값으로 굳는다. */
-  const [color, setColor] = useState<string | null>(null);
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [starred, setStarred] = useState(false);
   /** 삭제 확인 모달이 떠 있는지 */
   const [confirmOpen, setConfirmOpen] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
 
   const editing = task !== null;
 
-  /**
-   * 열려 있는 동안의 --accent 값. 열릴 때 한 번만 읽는다.
-   * 모달이 떠 있는 사이에는 테마를 바꿀 수 없으니(테마 선택은 사이드바에 있다) 이걸로 충분하다.
-   */
-  const accent = useMemo(() => (open ? currentAccent() : ""), [open]);
-  const palette = useMemo(() => paletteFor(accent), [accent]);
-
   // 열릴 때마다 상태를 초기화한다. 수정이면 저장된 값으로 채운다.
   useEffect(() => {
     if (!open) return;
     setTitle(task?.title ?? "");
-    setDates(task?.due_date ? [task.due_date] : []);
+    // 추가 모드에서는 달력에서 고른 칸이 있으면 그 날짜가 미리 골라진 채로 열린다.
+    const start = task?.due_date ?? initialDate;
+    setDates(start ? [start] : []);
     setMemo(task?.memo ?? "");
-    setIcon(toIconName(task?.icon));
-    setColor(task?.icon_color ?? null);
+    setCategoryId(task?.category_id ?? null);
+    setStarred(task?.is_starred ?? false);
     setConfirmOpen(false);
     titleRef.current?.focus();
-  }, [open, task]);
+  }, [open, task, initialDate]);
 
   useEffect(() => {
     if (!open) return;
@@ -87,24 +83,25 @@ export default function TaskModal({
 
   const canSave = title.trim().length > 0 && !saving;
 
-  const addDate = (value: string) => {
-    if (!value) return;
-    // 수정은 한 건짜리라 날짜도 하나만 유지한다.
-    if (editing) setDates([value]);
-    else setDates((prev) => (prev.includes(value) ? prev : [...prev, value].sort()));
-  };
+  /**
+   * 저장될 이모지. 고르는 팔레트 없이 제목·분류로 정해지므로(v1.5), 지금 어떤 게
+   * 붙을지 입력칸 앞에 그대로 보여준다. 보여주기만 하고 누를 수는 없다.
+   */
+  const icon = autoIcon(title, categoryName(categories, categoryId));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSave) return;
 
-    // 색을 고르지 않았으면 지금 테마의 --accent 값을 굳혀서 저장한다.
     const base = {
       title: title.trim(),
       icon,
-      icon_color: color ?? accent,
+      // 이모지는 색을 입힐 수 없어서 색상 선택을 없앴다(v1.4). 컬럼만 남아 있다.
+      icon_color: null,
       // 공백만 남은 메모는 '메모 없음'과 같으므로 null로 통일한다.
       memo: memo.trim() || null,
+      category_id: categoryId,
+      is_starred: starred,
     };
 
     // 마감일은 선택 항목 — 하나도 없으면 마감 없는 할 일 한 건으로 저장한다.
@@ -117,7 +114,7 @@ export default function TaskModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-ink/20 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/20 p-4 backdrop-blur-[2px]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -127,12 +124,23 @@ export default function TaskModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="task-modal-title"
-        className="w-full max-w-[380px] rounded-2xl border border-line bg-card p-6 shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)]"
+        className="my-auto w-full max-w-[380px] rounded-2xl border border-line bg-card p-6 shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)]"
       >
-        <div className="flex items-center">
-          <h2 id="task-modal-title" className="text-[16px] font-medium">
+        <div className="flex items-center gap-1">
+          <h2 id="task-modal-title" className="mr-auto text-[16px] font-medium">
             {editing ? "할 일 수정" : "할 일 추가"}
           </h2>
+
+          {/*
+            특별 일정은 라벨 없이 별 하나로만 둔다 — 켜짐/꺼짐이 모양으로 바로 읽힌다.
+            라벨이 없는 만큼 별을 크게 그려야 눈에 들어온다.
+          */}
+          <StarButton
+            starred={starred}
+            onToggle={() => setStarred((v) => !v)}
+            className={`size-9 ${starred ? "text-accent" : "text-ink-faint"}`}
+            iconClassName="size-6"
+          />
 
           {editing && (
             <button
@@ -140,7 +148,7 @@ export default function TaskModal({
               onClick={() => setConfirmOpen(true)}
               aria-label="할 일 삭제"
               title="삭제"
-              className="-mr-1 ml-auto grid size-8 place-items-center rounded-full text-danger transition hover:bg-danger/10 hover:text-danger-deep"
+              className="-mr-1 grid size-8 place-items-center rounded-full text-danger transition hover:bg-danger/10 hover:text-danger-deep"
             >
               <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path
@@ -162,48 +170,64 @@ export default function TaskModal({
             <span className="text-[12px] text-ink-soft">
               할 일 이름 <span className="text-accent-deep">*</span>
             </span>
-            <input
-              ref={titleRef}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="예) 방청소하기"
-              maxLength={120}
-              className="mt-1.5 w-full rounded-lg border border-line bg-canvas px-3 py-2.5 text-[14px] outline-none placeholder:text-ink-faint focus:border-accent"
-            />
+            {/* 앞쪽 이모지는 저장될 아이콘 미리보기다. 입력칸 안에 두어 제목과 함께 읽힌다. */}
+            <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-line bg-canvas px-3 focus-within:border-accent">
+              <TaskIcon icon={icon} className="text-[16px]" />
+              <input
+                ref={titleRef}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="예) 방청소하기"
+                maxLength={120}
+                className="min-w-0 flex-1 bg-transparent py-2.5 text-[14px] outline-none placeholder:text-ink-faint"
+              />
+            </div>
+            <p className="px-1 pt-1 text-[11px] text-ink-faint">
+              아이콘은 제목과 분류에 맞춰 자동으로 붙어요
+            </p>
           </label>
 
           <div>
-            <label className="block">
-              <span className="text-[12px] text-ink-soft">
-                마감일 (선택){!editing && " · 여러 날짜를 고르면 각각 만들어져요"}
-              </span>
-              <input
-                type="date"
-                // 추가할 때는 고른 날짜를 아래 목록으로 옮기고 칸을 비워, 이어서 또 고를 수 있게 한다.
-                value={editing ? (dates[0] ?? "") : ""}
-                onChange={(e) => addDate(e.target.value)}
-                className="mt-1.5 w-full rounded-lg border border-line bg-canvas px-3 py-2.5 text-[14px] outline-none focus:border-accent"
+            <span className="text-[12px] text-ink-soft">
+              마감일 (선택){!editing && " · 여러 날을 누르면 각각 만들어져요"}
+            </span>
+            <div className="mt-1.5">
+              <DatePicker
+                value={dates}
+                today={today}
+                // 수정은 이미 있는 한 건을 고치는 것이라 날짜도 하나만 유지한다.
+                multiple={!editing}
+                onChange={setDates}
               />
-            </label>
+            </div>
+          </div>
 
-            {!editing && dates.length > 0 && (
-              <ul className="mt-2 flex flex-wrap gap-1.5">
-                {dates.map((d) => (
-                  <li key={d}>
-                    <button
-                      type="button"
-                      onClick={() => setDates((prev) => prev.filter((x) => x !== d))}
-                      aria-label={`${shortDate(d)} 빼기`}
-                      className="flex items-center gap-1 rounded-full bg-soft px-2.5 py-1 text-[12px] text-ink transition hover:bg-soft-deep"
-                    >
-                      {shortDate(d)}
-                      <svg viewBox="0 0 24 24" className="size-3 text-ink-soft" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-                      </svg>
-                    </button>
-                  </li>
+          <div>
+            <span className="text-[12px] text-ink-soft">분류 (선택)</span>
+
+            {categories.length === 0 ? (
+              <p className="mt-1.5 text-[12px] leading-relaxed text-ink-faint">
+                아직 만든 분류가 없어요. 왼쪽 사이드바에서 만들 수 있어요.
+              </p>
+            ) : (
+              <div role="radiogroup" aria-label="분류" className="mt-1.5 flex flex-wrap gap-1.5">
+                {[null, ...categories.map((c) => c.id)].map((id) => (
+                  <button
+                    key={id ?? "none"}
+                    type="button"
+                    role="radio"
+                    aria-checked={categoryId === id}
+                    onClick={() => setCategoryId(id)}
+                    className={`rounded-full border px-3 py-1.5 text-[12px] transition ${
+                      categoryId === id
+                        ? "border-accent-deep bg-soft text-ink"
+                        : "border-line text-ink-soft hover:border-ink-faint"
+                    }`}
+                  >
+                    {id === null ? "미분류" : categories.find((c) => c.id === id)!.name}
+                  </button>
                 ))}
-              </ul>
+              </div>
             )}
           </div>
 
@@ -219,62 +243,6 @@ export default function TaskModal({
               className="mt-1.5 w-full resize-none rounded-lg border border-line bg-canvas px-3 py-2.5 text-[13px] leading-relaxed outline-none placeholder:text-ink-faint focus:border-accent"
             />
           </label>
-
-          <div>
-            <span className="text-[12px] text-ink-soft">아이콘</span>
-            <div role="radiogroup" aria-label="아이콘" className="mt-1.5 flex gap-2">
-              {ICON_ORDER.map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  role="radio"
-                  aria-checked={icon === name}
-                  aria-label={ICON_LABELS[name]}
-                  title={ICON_LABELS[name]}
-                  onClick={() => setIcon(name)}
-                  className={`grid size-9 place-items-center rounded-[10px] border bg-card transition ${
-                    icon === name
-                      ? "border-accent-deep ring-2 ring-soft-deep"
-                      : "border-line hover:border-ink-faint"
-                  }`}
-                >
-                  <TaskIcon icon={name} color={color} className="size-4" />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <span className="text-[12px] text-ink-soft">색상</span>
-            <div role="radiogroup" aria-label="색상" className="mt-2 flex items-center gap-2.5">
-              <button
-                type="button"
-                role="radio"
-                aria-checked={color === null}
-                aria-label="테마 기본"
-                title="테마 기본"
-                onClick={() => setColor(null)}
-                className={`size-6 rounded-full bg-accent transition ${
-                  color === null ? "ring-2 ring-ink-soft ring-offset-2 ring-offset-card" : ""
-                }`}
-              />
-              {palette.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={color === c.value}
-                  aria-label={c.label}
-                  title={c.label}
-                  onClick={() => setColor(c.value)}
-                  className={`size-6 rounded-full transition ${
-                    color === c.value ? "ring-2 ring-ink-soft ring-offset-2 ring-offset-card" : ""
-                  }`}
-                  style={{ backgroundColor: c.value }}
-                />
-              ))}
-            </div>
-          </div>
 
           <div className="flex gap-2">
             <button

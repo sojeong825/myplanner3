@@ -1,7 +1,9 @@
 /**
- * 개인화 설정. 로그인이 없으므로 서버가 아닌 브라우저 저장소에 보관한다.
+ * 개인화 설정. 게스트는 브라우저 저장소, 로그인 상태는 서버에 보관한다.
  * Task 데이터와는 완전히 분리되어 있다.
  */
+
+import type { CategoryFilter } from "@/lib/categories";
 
 export const THEMES = [
   { id: "pink", label: "핑크", swatch: "#e5aab0" },
@@ -9,6 +11,12 @@ export const THEMES = [
   { id: "mint", label: "민트", swatch: "#7cc4ab" },
   { id: "cream", label: "크림", swatch: "#ddb673" },
   { id: "gray", label: "그레이", swatch: "#9797a4" },
+  // v1.3 추가. 새 테마를 넣을 때는 globals.css 블록, 아래 배열, settings_theme_check
+  // 제약, lib/icons.tsx의 색 거리표 — 네 곳을 함께 고쳐야 한다.
+  { id: "blue", label: "블루", swatch: "#8fb8de" },
+  { id: "sage", label: "세이지", swatch: "#9bb894" },
+  { id: "coral", label: "코랄", swatch: "#e39b89" },
+  { id: "mocha", label: "모카", swatch: "#a98c7d" },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];
@@ -30,6 +38,12 @@ export type Settings = {
   /** 기념일 카운터의 기준 날짜('YYYY-MM-DD'). 없으면 비활성 안내. */
   counter_date: string | null;
   counter_label: string;
+  /**
+   * 분류 필터. calendar_view와 같은 성격의 '보기 상태'라서 여기 둔다.
+   * 그 덕분에 게스트(localStorage)와 로그인(서버) 양쪽에 저장 경로가 이미 있다.
+   * null이면 전체 보기.
+   */
+  filter_category_id: CategoryFilter;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -40,6 +54,7 @@ export const DEFAULT_SETTINGS: Settings = {
   banner_image: null,
   counter_date: null,
   counter_label: "시작한 날",
+  filter_category_id: null,
 };
 
 export const SETTINGS_KEY = "my-planner:settings";
@@ -82,6 +97,9 @@ export function coerceSettings(raw: unknown): Settings {
         ? v.counter_date
         : null,
     counter_label: asText(v.counter_label, COUNTER_LABEL_MAX, DEFAULT_SETTINGS.counter_label),
+    // 지워진 분류를 가리킬 수 있다. 그건 분류 목록을 함께 봐야 알 수 있어서
+    // 화면(page.tsx)에서 목록과 대조해 걸러낸다.
+    filter_category_id: typeof v.filter_category_id === "number" ? v.filter_category_id : null,
   };
 }
 

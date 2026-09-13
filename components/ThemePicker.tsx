@@ -11,7 +11,11 @@ export default function ThemePicker({ value, onChange }: Props) {
   return (
     <div>
       <p className="px-1 pb-2 text-[11px] text-ink-soft">테마</p>
-      <div role="radiogroup" aria-label="테마" className="flex items-center justify-between px-1">
+      {/*
+        사이드바 안쪽 폭이 164px이라 20px 스와치는 한 줄에 다섯 개까지만 들어간다.
+        justify-between으로 늘려두면 테마를 더할 때마다 조용히 삐져나가므로 wrap으로 둔다.
+      */}
+      <div role="radiogroup" aria-label="테마" className="flex flex-wrap items-center gap-2.5 px-1">
         {THEMES.map((theme) => {
           const active = theme.id === value;
           return (

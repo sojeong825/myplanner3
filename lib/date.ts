@@ -34,6 +34,12 @@ export function diffDays(a: DateKey, b: DateKey): number {
 export type Dday = {
   /** 남은 일수. 0이면 당일, 음수면 마감이 지난 것. */
   days: number;
+  /**
+   * 화면에 붙이는 상태 태그.
+   *
+   * 지난 일정은 'D+3'보다 '3일 지남'이 한눈에 읽혀서 방향이 다른 표기를 쓴다.
+   * 이 한 곳에서만 만들어, 목록·검색이 같은 말을 쓰게 한다.
+   */
   label: string;
   overdue: boolean;
   today: boolean;
@@ -44,7 +50,7 @@ export function getDday(dueDate: DateKey, from: DateKey = todayKey()): Dday {
   const days = diffDays(dueDate, from);
   return {
     days,
-    label: days === 0 ? "D-Day" : days > 0 ? `D-${days}` : `D+${-days}`,
+    label: days === 0 ? "오늘" : days > 0 ? `D-${days}` : `${-days}일 지남`,
     overdue: days < 0,
     today: days === 0,
   };

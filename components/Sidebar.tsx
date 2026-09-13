@@ -1,14 +1,22 @@
 "use client";
 
+import CategoryFilter from "@/components/CategoryFilter";
 import PlannerName from "@/components/PlannerName";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import ThemePicker from "@/components/ThemePicker";
+import type { Category, CategoryFilter as Filter } from "@/lib/categories";
 import type { SaveResult, ThemeId } from "@/lib/settings";
 
 type Props = {
   pendingCount: number;
   dueTodayCount: number;
   doneCount: number;
+  categories: Category[];
+  /** 화면 전체가 공유하는 필터. 여기에는 고르는 자리만 있고 적용은 호출부에서 한다. */
+  filter: Filter;
+  onFilterChange: (next: Filter) => void;
+  onAddCategory: (name: string) => void;
+  onRemoveCategory: (category: Category) => void;
   /** null이면 게스트 */
   email: string | null;
   plannerName: string;
@@ -34,6 +42,11 @@ export default function Sidebar({
   pendingCount,
   dueTodayCount,
   doneCount,
+  categories,
+  filter,
+  onFilterChange,
+  onAddCategory,
+  onRemoveCategory,
   email,
   plannerName,
   profileImage,
@@ -85,6 +98,14 @@ export default function Sidebar({
         <div className="h-px bg-line" />
         <Stat label="완료" value={doneCount} />
       </div>
+
+      <CategoryFilter
+        categories={categories}
+        value={filter}
+        onChange={onFilterChange}
+        onAdd={onAddCategory}
+        onRemove={onRemoveCategory}
+      />
 
       <div className="mt-auto flex flex-col gap-4">
         <ThemePicker value={theme} onChange={onThemeChange} />

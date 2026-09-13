@@ -5,12 +5,18 @@ import AuthModal from "@/components/AuthModal";
 import BannerCard from "@/components/BannerCard";
 import Calendar from "@/components/Calendar";
 import CounterCard from "@/components/CounterCard";
-import DdayList from "@/components/DdayList";
 import MergePrompt from "@/components/MergePrompt";
+import ScheduleCard from "@/components/ScheduleCard";
 import Sidebar from "@/components/Sidebar";
+import TaskDetail from "@/components/TaskDetail";
 import TaskList from "@/components/TaskList";
 import TaskModal from "@/components/TaskModal";
 import TaskSearch from "@/components/TaskSearch";
+import {
+  matchesFilter,
+  type Category,
+  type CategoryFilter,
+} from "@/lib/categories";
 import { addDays, addMonthsKey, diffDays, todayKey, type DateKey } from "@/lib/date";
 import type { CalendarView, ThemeId } from "@/lib/settings";
 import {
@@ -36,6 +42,22 @@ function byDueThenCreated(a: Task, b: Task) {
   return a.created_at < b.created_at ? 1 : -1;
 }
 
+/**
+ * 별표를 맨 위로 끌어올리는 래퍼. 같은 그룹 안에서는 넘겨받은 순서를 그대로 쓴다.
+ * 목록마다 정렬 기준이 다르지만(마감 오름차순/내림차순) '별표가 먼저'는 공통이라
+ * 각 비교 함수에 조건을 심지 않고 여기서 한 번만 씌운다.
+ */
+function starredFirst(cmp: (a: Task, b: Task) => number) {
+  return (a: Task, b: Task) => {
+    if (a.is_starred !== b.is_starred) return a.is_starred ? -1 : 1;
+    return cmp(a, b);
+  };
+}
+
+/** 지난 일정은 최근에 지난 것부터 본다. */
+const byDueDesc = (a: Task, b: Task) => (a.due_date! < b.due_date! ? 1 : -1);
+const byDueAsc = (a: Task, b: Task) => (a.due_date! < b.due_date! ? -1 : 1);
+
 const message = (e: unknown, fallback: string) =>
   e instanceof Error ? e.message : fallback;
 
@@ -50,6 +72,7 @@ export default function Page() {
   const { settings, setSettings, update } = useSettings(store, ready);
 
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +80,17 @@ export default function Page() {
   const [modalOpen, setModalOpen] = useState(false);
   /** null이면 추가 모드, Task가 담기면 그 항목 수정 모드 */
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  /**
+   * 보기 모달에 떠 있는 일정의 id. 일정을 누르면 수정 모달이 아니라 여기부터 연다 —
+   * 내용만 확인하려다 모르는 새 값을 건드리는 일을 막는다.
+   *
+   * Task를 통째로 담지 않고 id만 담는 이유는, 모달이 떠 있는 동안 별표를 켜면
+   * 담아둔 사본은 옛날 값 그대로라 화면이 따라 바뀌지 않기 때문이다.
+   * 목록에서 매번 찾아 쓰면 항상 최신이고, 그 일정이 지워지면 저절로 닫힌다.
+   */
+  const [viewingId, setViewingId] = useState<number | null>(null);
+  /** 달력에서 고른 날짜 칸. '+ 일정 추가'가 이 날짜로 채워진다. */
+  const [selectedDate, setSelectedDate] = useState<DateKey | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   /** 로그인했는데 서버에도 로컬에도 데이터가 있어 합칠지 물어야 하는 상태 */
   const [mergeCount, setMergeCount] = useState<number | null>(null);
@@ -73,7 +107,13 @@ export default function Page() {
   const reload = useCallback(async () => {
     setLoading(true);
     try {
-      setTasks(await store.listTasks());
+      // 분류는 할 일을 그릴 때 이름이 필요하므로 함께 받는다.
+      const [nextTasks, nextCategories] = await Promise.all([
+        store.listTasks(),
+        store.listCategories(),
+      ]);
+      setTasks(nextTasks);
+      setCategories(nextCategories);
       setError(null);
     } catch (e) {
       setError(message(e, "할 일을 불러오지 못했어요."));
@@ -98,7 +138,11 @@ export default function Page() {
     (async () => {
       setLoading(true);
       try {
-        const serverTasks = await store.listTasks();
+        const [serverTasks, serverCategories] = await Promise.all([
+          store.listTasks(),
+          store.listCategories(),
+        ]);
+        setCategories(serverCategories);
         const localCount = localTaskCount();
 
         if (localCount === 0) {
@@ -147,7 +191,14 @@ export default function Page() {
     setModalOpen(true);
   }, []);
 
+  /** 일정을 눌렀을 때 — 곧장 고치지 않고 보기 모달부터 연다. */
+  const openView = useCallback((task: Task) => {
+    setViewingId(task.id);
+  }, []);
+
+  /** 보기 모달의 '수정' 버튼에서만 들어온다. */
   const openEdit = useCallback((task: Task) => {
+    setViewingId(null);
     setEditingTask(task);
     setModalOpen(true);
   }, []);
@@ -215,41 +266,136 @@ export default function Page() {
     [store],
   );
 
+  /** 별표는 완료와 같은 방식 — 먼저 화면을 바꾸고, 실패하면 되돌린다. */
+  const toggleStar = useCallback(
+    async (task: Task) => {
+      const next = !task.is_starred;
+      setError(null);
+      setTasks((prev) =>
+        prev.map((t) => (t.id === task.id ? { ...t, is_starred: next } : t)),
+      );
+
+      try {
+        await store.setStarred(task.id, next);
+      } catch (e) {
+        setTasks((prev) =>
+          prev.map((t) => (t.id === task.id ? { ...t, is_starred: !next } : t)),
+        );
+        setError(message(e, "별표를 바꾸지 못했어요."));
+      }
+    },
+    [store],
+  );
+
+  const addCategory = useCallback(
+    async (name: string) => {
+      setError(null);
+      try {
+        const created = await store.addCategory({ name, sort_order: categories.length });
+        setCategories((prev) => [...prev, created]);
+      } catch (e) {
+        setError(message(e, "분류를 만들지 못했어요."));
+      }
+    },
+    [store, categories.length],
+  );
+
+  /** 분류를 지우면 거기 달려 있던 할 일은 미분류로 남는다(서버는 on delete set null). */
+  const removeCategory = useCallback(
+    async (category: Category) => {
+      setError(null);
+      try {
+        await store.removeCategory(category.id);
+        setCategories((prev) => prev.filter((c) => c.id !== category.id));
+        setTasks((prev) =>
+          prev.map((t) => (t.category_id === category.id ? { ...t, category_id: null } : t)),
+        );
+        // 지운 분류를 보고 있었다면 전체 보기로 돌아간다.
+        if (settings?.filter_category_id === category.id) {
+          void update({ filter_category_id: null });
+        }
+      } catch (e) {
+        setError(message(e, "분류를 지우지 못했어요."));
+      }
+    },
+    [store, settings?.filter_category_id, update],
+  );
+
+  /**
+   * 지금 걸려 있는 필터.
+   *
+   * 저장된 값이 이미 지워진 분류를 가리킬 수 있다(다른 탭에서 지웠거나, 게스트 데이터가
+   * 어긋났거나). 목록에 없는 id면 전체 보기로 떨어뜨린다 — 안 그러면 아무것도 안 보이는
+   * 화면에서 빠져나올 방법이 없다.
+   */
+  const filter: CategoryFilter = useMemo(() => {
+    const id = settings?.filter_category_id ?? null;
+    return id !== null && categories.some((c) => c.id === id) ? id : null;
+  }, [settings?.filter_category_id, categories]);
+
+  /**
+   * 일/일상 필터를 적용하는 단 한 곳.
+   *
+   * 아래 파생 목록(달력·다가오는·지난·할 일·통계)은 전부 이 배열에서 나오므로
+   * 화면 어디를 봐도 같은 기준이 걸린다. 필터를 개별 목록마다 걸면 한 군데를
+   * 빠뜨렸을 때 달력과 목록이 서로 다른 걸 보여준다.
+   *
+   * 검색만 예외로 원본 tasks를 받는다 — TaskSearch 주석 참고.
+   */
+  const visible = useMemo(() => tasks.filter((t) => matchesFilter(filter, t)), [tasks, filter]);
+
   const tasksByDate = useMemo(() => {
     const map = new Map<DateKey, Task[]>();
-    for (const task of tasks) {
+    for (const task of visible) {
       if (!task.due_date) continue;
       const bucket = map.get(task.due_date);
       if (bucket) bucket.push(task);
       else map.set(task.due_date, [task]);
     }
-    for (const bucket of map.values()) bucket.sort(byDueThenCreated);
+    for (const bucket of map.values()) bucket.sort(starredFirst(byDueThenCreated));
     return map;
-  }, [tasks]);
+  }, [visible]);
 
-  // 노출 조건: 미완료 AND 마감일 있음 AND D-Day ~ D-10 → 마감일 오름차순.
-  // 마감이 지난 것(D+1 이후)은 '다가오는' 일정이 아니고,
-  // 아직 먼 것(D-11 이후)은 지금 신경 쓸 일이 아니라 양쪽 다 뺀다.
-  const ddayTasks = useMemo(() => {
+  // 노출 조건: 미완료 AND 마감일 있음 AND D-Day ~ D-10 → 별표 먼저, 마감일 오름차순.
+  // 마감이 지난 것은 아래 overdue가 맡고, 아직 먼 것(D-11 이후)은 지금 신경 쓸 일이 아니다.
+  const upcoming = useMemo(() => {
     if (!today) return [];
-    return tasks
+    return visible
       .filter((t) => {
         if (t.is_done || !t.due_date) return false;
         const left = diffDays(t.due_date, today);
         return left >= 0 && left <= UPCOMING_DAYS;
       })
-      .sort((a, b) => (a.due_date! < b.due_date! ? -1 : 1));
-  }, [tasks, today]);
+      .sort(starredFirst(byDueAsc));
+  }, [visible, today]);
+
+  /**
+   * '지난 일정' 탭. 마감이 지났는데 아직 완료하지 않은 것만 담는다.
+   * 이미 끝낸 과거 일정까지 넣으면 시간이 갈수록 목록이 길어지기만 하고,
+   * 정작 지금 처리해야 할 것이 그 안에 묻힌다.
+   */
+  const overdue = useMemo(() => {
+    if (!today) return [];
+    return visible
+      .filter((t) => !t.is_done && t.due_date !== null && diffDays(t.due_date, today) < 0)
+      .sort(starredFirst(byDueDesc));
+  }, [visible, today]);
 
   const pending = useMemo(
-    () => tasks.filter((t) => !t.is_done).sort(byDueThenCreated),
-    [tasks],
+    () => visible.filter((t) => !t.is_done).sort(starredFirst(byDueThenCreated)),
+    [visible],
   );
-  const done = useMemo(() => tasks.filter((t) => t.is_done), [tasks]);
+  const done = useMemo(() => visible.filter((t) => t.is_done), [visible]);
 
   const dueTodayCount = useMemo(
-    () => (today ? ddayTasks.filter((t) => t.due_date === today).length : 0),
-    [ddayTasks, today],
+    () => (today ? upcoming.filter((t) => t.due_date === today).length : 0),
+    [upcoming, today],
+  );
+
+  /** 보기 모달에 그릴 일정. 목록에서 매번 찾으므로 별표를 켜면 바로 반영되고, 지워지면 닫힌다. */
+  const viewingTask = useMemo(
+    () => (viewingId === null ? null : (tasks.find((t) => t.id === viewingId) ?? null)),
+    [tasks, viewingId],
   );
 
   const view: CalendarView = settings?.calendar_view ?? "month";
@@ -273,6 +419,11 @@ export default function Page() {
         pendingCount={pending.length}
         dueTodayCount={dueTodayCount}
         doneCount={done.length}
+        categories={categories}
+        filter={filter}
+        onFilterChange={(next) => void update({ filter_category_id: next })}
+        onAddCategory={(name) => void addCategory(name)}
+        onRemoveCategory={(category) => void removeCategory(category)}
         email={email}
         plannerName={settings.planner_name}
         profileImage={settings.profile_image}
@@ -299,7 +450,7 @@ export default function Page() {
             </div>
           )}
 
-          <TaskSearch tasks={tasks} today={today} onSelect={openEdit} />
+          <TaskSearch tasks={tasks} today={today} onSelect={openView} />
 
           {/* 배너는 180px 고정. 카운터는 편집할 때만 더 커지면 되므로 items-start. */}
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-start gap-5">
@@ -322,11 +473,14 @@ export default function Page() {
             view={view}
             today={today}
             tasksByDate={tasksByDate}
+            selectedDate={selectedDate}
+            // 이미 고른 칸을 다시 누르면 해제한다 — 고른 날짜를 되돌릴 방법이 있어야 한다.
+            onSelectDate={(key) => setSelectedDate((prev) => (prev === key ? null : key))}
             onPrev={() => step(-1)}
             onNext={() => step(1)}
             onToday={() => setAnchor(todayKey())}
             onViewChange={(next) => void update({ calendar_view: next })}
-            onSelect={openEdit}
+            onSelect={openView}
             onAdd={openAdd}
           />
         </div>
@@ -341,7 +495,12 @@ export default function Page() {
           {loading ? (
             <div className="h-40 animate-pulse rounded-card border border-line bg-card" />
           ) : (
-            <DdayList tasks={ddayTasks} today={today} onSelect={openEdit} />
+            <ScheduleCard
+              upcoming={upcoming}
+              overdue={overdue}
+              today={today}
+              onSelect={openView}
+            />
           )}
 
           {loading ? (
@@ -351,16 +510,30 @@ export default function Page() {
               pending={pending}
               done={done}
               onToggle={toggleTask}
-              onSelect={openEdit}
+              onToggleStar={toggleStar}
+              onSelect={openView}
               onAdd={openAdd}
             />
           )}
         </div>
       </main>
 
+      <TaskDetail
+        task={viewingTask}
+        categories={categories}
+        today={today}
+        onClose={() => setViewingId(null)}
+        onEdit={openEdit}
+        onToggleStar={toggleStar}
+      />
+
       <TaskModal
         open={modalOpen}
         task={editingTask}
+        // 달력에서 고른 칸이 있으면 추가 모달의 마감일이 그 날짜로 채워진다.
+        initialDate={selectedDate}
+        today={today}
+        categories={categories}
         saving={saving}
         onClose={() => setModalOpen(false)}
         onSubmit={submitTask}

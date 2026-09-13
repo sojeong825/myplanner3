@@ -1,6 +1,6 @@
 "use client";
 
-import { TaskIcon } from "@/lib/icons";
+import { StarButton, TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
 /**
@@ -13,6 +13,7 @@ type Props = {
   pending: Task[];
   done: Task[];
   onToggle: (task: Task) => void;
+  onToggleStar: (task: Task) => void;
   onSelect: (task: Task) => void;
   onAdd: () => void;
 };
@@ -20,16 +21,23 @@ type Props = {
 function Row({
   task,
   onToggle,
+  onToggleStar,
   onSelect,
 }: {
   task: Task;
   onToggle: (t: Task) => void;
+  onToggleStar: (t: Task) => void;
   onSelect: (t: Task) => void;
 }) {
   return (
     // 보더·그림자 없이 여백만으로 구분한다. hover 때만 아주 옅게 톤이 바뀐다.
     // 체크박스는 완료 토글, 이름 영역은 수정 모달 — 클릭 영역을 나눠둔다.
-    <li className="flex items-center gap-2.5 rounded-[10px] bg-card px-3 py-2.5 transition hover:bg-canvas">
+    // 별표가 켜진 행만 배경으로 들어올린다.
+    <li
+      className={`group flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 transition hover:bg-canvas ${
+        task.is_starred && !task.is_done ? "bg-soft/60" : "bg-card"
+      }`}
+    >
       <label className="flex cursor-pointer items-center" title="완료 표시">
         <input
           type="checkbox"
@@ -57,11 +65,15 @@ function Row({
         title={task.memo ? `${task.title}\n${task.memo}` : task.title}
         className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 text-left"
       >
-        <TaskIcon icon={task.icon} color={task.icon_color} done={task.is_done} />
+        <TaskIcon icon={task.icon} done={task.is_done} />
 
         <span
           className={`truncate text-[13px] ${
-            task.is_done ? "text-ink-faint line-through" : "text-ink"
+            task.is_done
+              ? "text-ink-faint line-through"
+              : task.is_starred
+                ? "font-medium text-ink"
+                : "text-ink"
           }`}
         >
           {task.title}
@@ -77,11 +89,33 @@ function Row({
           </span>
         )}
       </button>
+
+      {/*
+        켜져 있으면 항상 보이고, 꺼져 있으면 hover·키보드 포커스에서만 드러난다.
+        display가 아니라 opacity로 숨기는 이유는 자리를 늘 차지하게 두기 위해서다 —
+        hover할 때마다 버튼이 생기면 옆 글자가 밀려 목록이 들썩인다.
+      */}
+      <StarButton
+        starred={task.is_starred}
+        onToggle={() => onToggleStar(task)}
+        className={
+          task.is_starred
+            ? "text-accent"
+            : "text-ink-faint opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+        }
+      />
     </li>
   );
 }
 
-export default function TaskList({ pending, done, onToggle, onSelect, onAdd }: Props) {
+export default function TaskList({
+  pending,
+  done,
+  onToggle,
+  onToggleStar,
+  onSelect,
+  onAdd,
+}: Props) {
   const empty = pending.length === 0 && done.length === 0;
 
   return (
@@ -109,7 +143,13 @@ export default function TaskList({ pending, done, onToggle, onSelect, onAdd }: P
           {pending.length > 0 && (
             <ul className="flex flex-col gap-2">
               {pending.map((task) => (
-                <Row key={task.id} task={task} onToggle={onToggle} onSelect={onSelect} />
+                <Row
+                  key={task.id}
+                  task={task}
+                  onToggle={onToggle}
+                  onToggleStar={onToggleStar}
+                  onSelect={onSelect}
+                />
               ))}
             </ul>
           )}
@@ -122,7 +162,13 @@ export default function TaskList({ pending, done, onToggle, onSelect, onAdd }: P
               </p>
               <ul className="flex flex-col gap-2">
                 {done.slice(0, DONE_LIMIT).map((task) => (
-                  <Row key={task.id} task={task} onToggle={onToggle} onSelect={onSelect} />
+                  <Row
+                    key={task.id}
+                    task={task}
+                    onToggle={onToggle}
+                    onToggleStar={onToggleStar}
+                    onSelect={onSelect}
+                  />
                 ))}
               </ul>
             </div>
