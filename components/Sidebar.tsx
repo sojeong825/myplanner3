@@ -21,9 +21,16 @@ type Props = {
   email: string | null;
   plannerName: string;
   profileImage: string | null;
+  /** 프로필 사진이 원형 틀에서 보일 위치(0~100%). */
+  profileX: number;
+  profileY: number;
   theme: ThemeId;
   onNameChange: (name: string) => void;
-  onProfileChange: (dataUrl: string | null) => Promise<SaveResult>;
+  onProfileChange: (next: {
+    image?: string | null;
+    x?: number;
+    y?: number;
+  }) => Promise<SaveResult>;
   onThemeChange: (theme: ThemeId) => void;
   onSignIn: () => void;
   onSignOut: () => void;
@@ -50,6 +57,8 @@ export default function Sidebar({
   email,
   plannerName,
   profileImage,
+  profileX,
+  profileY,
   theme,
   onNameChange,
   onProfileChange,
@@ -64,7 +73,12 @@ export default function Sidebar({
       {signedIn ? (
         // 로그인: 프로필 사진 → 이름 + 연필 → 통계 → 테마 → 로그아웃
         <div className="flex flex-col items-center gap-2.5">
-          <ProfileAvatar image={profileImage} onChange={onProfileChange} />
+          <ProfileAvatar
+            image={profileImage}
+            x={profileX}
+            y={profileY}
+            onSave={onProfileChange}
+          />
           <div className="w-full">
             <PlannerName name={plannerName} onSave={onNameChange} />
           </div>

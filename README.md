@@ -92,11 +92,39 @@ Task 데이터와는 완전히 분리돼 있고, 새로고침해도 유지된다
 ### 프로필 사진 · 배너 이미지
 
 둘 다 같은 업로드 경로(`lib/image.ts`)를 쓴다. jpg / png / webp, 5MB 이하만 받고,
-저장 전에 캔버스로 **가운데를 목표 비율로 잘라 줄인 뒤** webp data URL로 넣는다.
-프로필은 256×256, 배너는 960×384(2.5:1)다.
+webp data URL로 넣는다.
 
-원본을 그대로 base64로 넣으면 5MB 파일이 약 6.7MB가 되어 localStorage 한도(보통 5MB)를
-넘긴다. 표시가 cover라 원본 해상도가 필요 없어서 줄여 저장한다.
+**자르지 않는다(v1.6).** 원본 비율 그대로 두고 긴 변만 줄인다 — 프로필 320px,
+배너 960px. 예전에는 가운데를 잘라 256×256 / 960×384로 저장했는데, 그러면 잘려나간
+부분이 영영 사라져서 나중에 '조금 위를 보여달라'고 할 방법이 없었다.
+
+그래도 줄이기는 한다. 원본을 그대로 base64로 넣으면 5MB 파일이 약 6.7MB가 되어
+localStorage 한도(보통 5MB)를 넘긴다.
+
+#### 보일 위치 고르기
+
+어디를 보여줄지는 `settings`의 `profile_pos_x/y`, `banner_pos_x/y`(0~100%)가 정하고,
+화면은 `object-cover` + `object-position`으로 그린다. **원본이 그대로 남아 있으므로
+몇 번을 다시 조정해도 화질이 깎이지 않는다.**
+
+조작은 `components/ImagePositioner.tsx` 하나가 맡고 배너와 프로필이 같이 쓴다.
+끌린 픽셀을 퍼센트로 바꿀 때는 `object-cover`가 그리는 크기를 그대로 다시 계산해서
+**틀 밖으로 넘치는 양**을 구한다 — 그 넘치는 양이 곧 끌 수 있는 거리다.
+넘치지 않는 축으로는 움직이지 않는다. 가로가 딱 맞는 사진을 좌우로 끌면 아무 일도
+일어나지 않아야 하고, 억지로 움직이면 빈 여백이 드러난다.
+
+`draggable={false}`가 필요하다. 브라우저 기본 이미지 끌기가 먼저 잡아채면 위치 조정이
+아예 안 먹는다. 포인터는 `setPointerCapture`로 잡아둬서 틀 밖으로 나가도 끊기지 않는다.
+
+프로필은 **64px 아바타에서 직접 끌지 않는다** — 너무 작아 원하는 위치를 잡을 수 없다.
+팝오버에 132px 원으로 크게 펼쳐두고 거기서 끌게 하며, 결과는 위 아바타에 바로 비친다.
+
+새 사진을 올리면 위치는 가운데로 되돌린다. 이전 사진의 위치를 물려받으면 엉뚱한 데가
+보인다. 사진과 위치는 **한 번의 저장으로 함께** 넘긴다(`onSave({ image, x, y })`) —
+나눠 저장하면 사진만 바뀌고 위치는 옛 값인 순간이 생긴다.
+
+**이미 잘려 저장된 기존 사진**은 비율이 틀에 딱 맞아서 위치값 50이면 예전과 똑같이
+보인다. 다만 옮길 여백이 없어서, 위치를 바꾸려면 다시 올려야 한다.
 
 ### 주간 뷰
 
@@ -315,7 +343,7 @@ localStorage에는 마이그레이션을 걸 곳이 없어서** 읽는 쪽이 �
 스키마는 `supabase/migrations/0001_create_tasks.sql`부터 번호순으로 쌓인다.
 `icon`/`icon_color`(0002), `user_id`와 `settings`(0003), `memo`(0004),
 `area`/`category`/`is_starred`와 테마 4종(0005), 이모지 아이콘(0006),
-사용자 정의 분류(0007)가 뒤에 붙었다.
+사용자 정의 분류(0007), 사진 위치(0008)가 뒤에 붙었다.
 새로 추가하는 컬럼은 전부 nullable이나 default로 둔다 — 그래야 기존 행을 건드리지 않고
 배포할 수 있다.
 
@@ -407,14 +435,17 @@ localStorage에만 쓴다.
 
 배너 카드는 높이 180px 고정에 `object-fit: cover`라, 세로로 길거나 납작한 이미지를
 올려도 레이아웃이 밀리지 않는다. placeholder 상태와 이미지 상태의 높이가 같다.
+사진 위에 마우스를 올리면 `위치 조정 / 변경 / 삭제`가 나온다.
 
 | 필드 | 값 | 기본값 |
 |---|---|---|
 | `planner_name` | 문자 (20자) | `my planner` |
-| `profile_image` | data URL (webp), 256×256 | `null` |
+| `profile_image` | data URL (webp), 긴 변 320px | `null` |
+| `profile_pos_x` · `profile_pos_y` | 0~100 (%) | `50` (가운데) |
+| `banner_pos_x` · `banner_pos_y` | 0~100 (%) | `50` (가운데) |
 | `theme` | 9종 (아래) | `pink` |
 | `calendar_view` | `month` / `week` | `month` |
-| `banner_image` | data URL (webp), 960×384 | `null` |
+| `banner_image` | data URL (webp), 긴 변 960px | `null` |
 | `counter_date` | `'YYYY-MM-DD'` | `null` |
 | `counter_label` | 문자 (20자) | `시작한 날` |
 | `filter_category_id` | `categories.id` | `null` (전체) |

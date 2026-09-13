@@ -427,9 +427,19 @@ export default function Page() {
         email={email}
         plannerName={settings.planner_name}
         profileImage={settings.profile_image}
+        profileX={settings.profile_pos_x}
+        profileY={settings.profile_pos_y}
         theme={settings.theme}
         onNameChange={(planner_name) => void update({ planner_name })}
-        onProfileChange={(dataUrl) => update({ profile_image: dataUrl })}
+        // 사진과 위치를 한 번에 저장한다 — 두 번 나눠 저장하면 사진만 바뀌고 위치는
+        // 예전 값으로 남는 순간이 생긴다.
+        onProfileChange={(next) =>
+          update({
+            ...(next.image !== undefined && { profile_image: next.image }),
+            ...(next.x !== undefined && { profile_pos_x: next.x }),
+            ...(next.y !== undefined && { profile_pos_y: next.y }),
+          })
+        }
         onThemeChange={(theme: ThemeId) => void update({ theme })}
         onSignIn={() => setAuthOpen(true)}
         onSignOut={() => void signOut()}
@@ -464,7 +474,15 @@ export default function Page() {
             />
             <BannerCard
               image={settings.banner_image}
-              onChange={(dataUrl) => update({ banner_image: dataUrl })}
+              x={settings.banner_pos_x}
+              y={settings.banner_pos_y}
+              onSave={(next) =>
+                update({
+                  ...(next.image !== undefined && { banner_image: next.image }),
+                  ...(next.x !== undefined && { banner_pos_x: next.x }),
+                  ...(next.y !== undefined && { banner_pos_y: next.y }),
+                })
+              }
             />
           </div>
 

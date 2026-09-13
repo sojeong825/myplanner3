@@ -29,12 +29,21 @@ export const DEFAULT_PLANNER_NAME = "my planner";
 export type Settings = {
   /** 사이드바에 보이는 플래너 이름. 빈 값으로 저장하면 기본값으로 되돌린다. */
   planner_name: string;
-  /** 정사각형으로 줄여 저장한 data URL. 없으면 기본 실루엣. */
+  /**
+   * 원본 비율 그대로 줄여 저장한 data URL. 없으면 기본 실루엣.
+   * 원형 틀에서 어디를 보여줄지는 아래 profile_pos_* 가 정한다.
+   */
   profile_image: string | null;
+  /** 프로필 사진이 원형 틀에서 보일 위치(0~100%). 50이면 가운데. */
+  profile_pos_x: number;
+  profile_pos_y: number;
   theme: ThemeId;
   calendar_view: CalendarView;
-  /** 카운터 옆 배너 카드. 2.5:1로 줄여 저장한 data URL. 없으면 placeholder. */
+  /** 카운터 옆 배너 카드. 원본 비율 그대로 줄여 저장한 data URL. 없으면 placeholder. */
   banner_image: string | null;
+  /** 배너가 2.5:1 틀에서 보일 위치(0~100%). 50이면 가운데. */
+  banner_pos_x: number;
+  banner_pos_y: number;
   /** 기념일 카운터의 기준 날짜('YYYY-MM-DD'). 없으면 비활성 안내. */
   counter_date: string | null;
   counter_label: string;
@@ -46,12 +55,19 @@ export type Settings = {
   filter_category_id: CategoryFilter;
 };
 
+/** 위치를 안 정했을 때의 기본값 — 가운데. */
+export const CENTER = 50;
+
 export const DEFAULT_SETTINGS: Settings = {
   planner_name: DEFAULT_PLANNER_NAME,
   profile_image: null,
+  profile_pos_x: CENTER,
+  profile_pos_y: CENTER,
   theme: "pink",
   calendar_view: "month",
   banner_image: null,
+  banner_pos_x: CENTER,
+  banner_pos_y: CENTER,
   counter_date: null,
   counter_label: "시작한 날",
   filter_category_id: null,
@@ -74,6 +90,12 @@ const asDataUrl = (v: unknown) =>
 const asText = (v: unknown, max: number, fallback: string) =>
   typeof v === "string" ? v.slice(0, max) : fallback;
 
+/** 사진 위치는 0~100 사이 정수만 받는다. 그 밖의 값은 가운데로 떨어뜨린다. */
+const asPercent = (v: unknown) =>
+  typeof v === "number" && Number.isFinite(v)
+    ? Math.min(100, Math.max(0, Math.round(v)))
+    : CENTER;
+
 /**
  * localStorage에서 읽은 값과 서버 settings 행을 같은 모양으로 정규화한다.
  * 손상된 값이나 손으로 고친 값이 들어와도 기본값으로 떨어진다.
@@ -86,12 +108,16 @@ export function coerceSettings(raw: unknown): Settings {
       asText(v.planner_name, PLANNER_NAME_MAX, DEFAULT_PLANNER_NAME).trim() ||
       DEFAULT_PLANNER_NAME,
     profile_image: asDataUrl(v.profile_image),
+    profile_pos_x: asPercent(v.profile_pos_x),
+    profile_pos_y: asPercent(v.profile_pos_y),
     theme: THEME_IDS.includes(v.theme as string) ? (v.theme as ThemeId) : DEFAULT_SETTINGS.theme,
     calendar_view:
       v.calendar_view === "week" || v.calendar_view === "month"
         ? v.calendar_view
         : DEFAULT_SETTINGS.calendar_view,
     banner_image: asDataUrl(v.banner_image),
+    banner_pos_x: asPercent(v.banner_pos_x),
+    banner_pos_y: asPercent(v.banner_pos_y),
     counter_date:
       typeof v.counter_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v.counter_date)
         ? v.counter_date

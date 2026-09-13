@@ -2,12 +2,15 @@ export const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export const ACCEPT_ATTR = ACCEPTED_TYPES.join(",");
 export const MAX_BYTES = 5 * 1024 * 1024;
 
-/** 프로필로 저장할 정사각형 한 변 픽셀 */
-const AVATAR_SIZE = 256;
-
-/** 배너로 저장할 크기. 레퍼런스 배너와 비슷한 2.5:1 비율. */
-const BANNER_W = 960;
-const BANNER_H = 384;
+/**
+ * 저장할 때의 긴 변 상한.
+ *
+ * v1.6부터 **자르지 않고 줄이기만 한다.** 예전에는 가운데를 잘라 정사각형/2.5:1로
+ * 저장했는데, 그러면 잘려나간 부분이 영영 사라져서 나중에 보일 위치를 옮길 수가 없다.
+ * 지금은 원본 비율 그대로 두고 화면에서 object-position으로 잘라 보여준다.
+ */
+const AVATAR_MAX = 320;
+const BANNER_MAX = 960;
 
 export function validateImageFile(file: File): string | null {
   if (!ACCEPTED_TYPES.includes(file.type)) {
@@ -20,16 +23,17 @@ export function validateImageFile(file: File): string | null {
 }
 
 /**
- * 가운데를 목표 비율로 잘라 지정 크기로 줄인 data URL을 만든다.
+ * 원본 비율을 그대로 두고 긴 변이 max를 넘지 않게만 줄인 data URL을 만든다.
  *
- * 원본을 그대로 base64로 넣으면 5MB 파일이 약 6.7MB가 되어 localStorage
- * 한도(보통 5MB)를 넘긴다. 표시가 cover라 원본 해상도가 필요 없으므로
- * 저장 전에 줄인다.
+ * **자르지 않는다.** 잘라서 저장하면 잘려나간 부분이 사라져서, 나중에 '보일 위치'를
+ * 옮기려 해도 옮길 것이 없다. 어디를 보여줄지는 화면에서 object-position으로 정한다.
+ *
+ * 그래도 줄이기는 한다 — 원본을 그대로 base64로 넣으면 5MB 파일이 약 6.7MB가 되어
+ * localStorage 한도(보통 5MB)를 넘긴다.
  */
-export function fileToCroppedDataUrl(
+export function fileToFittedDataUrl(
   file: File,
-  outW: number,
-  outH: number,
+  max: number,
   quality = 0.85,
 ): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -45,6 +49,11 @@ export function fileToCroppedDataUrl(
         return;
       }
 
+      // 1을 넘지 않게 해서, 이미 작은 이미지를 억지로 키우지 않는다.
+      const scale = Math.min(1, max / Math.max(iw, ih));
+      const outW = Math.round(iw * scale);
+      const outH = Math.round(ih * scale);
+
       const canvas = document.createElement("canvas");
       canvas.width = outW;
       canvas.height = outH;
@@ -54,21 +63,7 @@ export function fileToCroppedDataUrl(
         return;
       }
 
-      // cover: 목표 비율에 맞춰 넘치는 쪽을 가운데 기준으로 잘라낸다.
-      const scale = Math.max(outW / iw, outH / ih);
-      const cropW = outW / scale;
-      const cropH = outH / scale;
-      ctx.drawImage(
-        img,
-        (iw - cropW) / 2,
-        (ih - cropH) / 2,
-        cropW,
-        cropH,
-        0,
-        0,
-        outW,
-        outH,
-      );
+      ctx.drawImage(img, 0, 0, outW, outH);
 
       // webp 인코딩을 지원하지 않는 브라우저는 png를 돌려주므로 jpeg로 되돌린다.
       let out = canvas.toDataURL("image/webp", quality);
@@ -87,8 +82,8 @@ export function fileToCroppedDataUrl(
   });
 }
 
-export const fileToSquareDataUrl = (file: File) =>
-  fileToCroppedDataUrl(file, AVATAR_SIZE, AVATAR_SIZE);
+export const fileToAvatarDataUrl = (file: File) =>
+  fileToFittedDataUrl(file, AVATAR_MAX);
 
 export const fileToBannerDataUrl = (file: File) =>
-  fileToCroppedDataUrl(file, BANNER_W, BANNER_H, 0.8);
+  fileToFittedDataUrl(file, BANNER_MAX, 0.8);

@@ -194,7 +194,42 @@ alter table public.settings drop column if exists filter_category;
 
 
 -- ============================================================
---  7. 확인 — 아래 표가 전부 ✅ 면 성공입니다
+--  7. 사진이 잘려 보일 위치 (v1.6)
+--
+--  전까지는 업로드할 때 가운데를 잘라 저장해서, 잘린 부분이 영영 사라졌다.
+--  이제 원본 비율 그대로 저장하고 어디를 보여줄지는 이 값이 정한다.
+--  50은 가운데 — 기존 사진은 예전과 똑같이 보인다.
+-- ============================================================
+
+alter table public.settings
+  add column if not exists profile_pos_x smallint not null default 50;
+alter table public.settings
+  add column if not exists profile_pos_y smallint not null default 50;
+alter table public.settings
+  add column if not exists banner_pos_x smallint not null default 50;
+alter table public.settings
+  add column if not exists banner_pos_y smallint not null default 50;
+
+comment on column public.settings.profile_pos_x is
+  '프로필 사진이 원형 틀에서 보일 가로 위치(0~100%). 50이면 가운데.';
+comment on column public.settings.banner_pos_x is
+  '배너가 2.5:1 틀에서 보일 가로 위치(0~100%). 50이면 가운데.';
+
+-- object-position은 0~100% 밖을 받지 않는다.
+alter table public.settings drop constraint if exists settings_image_pos_check;
+
+alter table public.settings
+  add constraint settings_image_pos_check
+  check (
+    profile_pos_x between 0 and 100
+    and profile_pos_y between 0 and 100
+    and banner_pos_x between 0 and 100
+    and banner_pos_y between 0 and 100
+  );
+
+
+-- ============================================================
+--  8. 확인 — 아래 표가 전부 ✅ 면 성공입니다
 -- ============================================================
 
 with check_list(순서, 항목, 통과) as (
@@ -221,6 +256,11 @@ with check_list(순서, 항목, 통과) as (
   select 6, '옛 settings.filter_area 칸이 사라졌다', not exists (
     select 1 from information_schema.columns
     where table_schema = 'public' and table_name = 'settings' and column_name = 'filter_area')
+  union all
+  select 7, '사진 위치 칸 4개가 생겼다', (
+    select count(*) = 4 from information_schema.columns
+    where table_schema = 'public' and table_name = 'settings'
+      and column_name in ('profile_pos_x', 'profile_pos_y', 'banner_pos_x', 'banner_pos_y'))
 )
 select 항목, case when 통과 then '✅ 완료' else '❌ 실패' end as 결과
 from check_list
