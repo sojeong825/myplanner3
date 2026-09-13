@@ -1,0 +1,227 @@
+-- ============================================================
+--  my planner 업데이트 SQL  (0005 + 0006 + 0007 한 번에)
+--
+--  ▶ 이 파일 전체를 복사해서 Supabase SQL Editor에 붙여넣고 Run 하세요.
+--
+--  ▶ 여러 번 실행해도 안전합니다.
+--     "이미 있으면 건너뛰고, 없으면 만든다"로만 짜여 있어서
+--     전에 일부만 실행됐더라도 나머지만 알아서 채웁니다.
+--
+--  ▶ 맨 마지막에 결과표가 나옵니다. 전부 ✅ 면 성공입니다.
+-- ============================================================
+
+
+-- ============================================================
+--  1. 분류 테이블 만들기
+-- ============================================================
+
+create table if not exists public.categories (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade default auth.uid(),
+  name text not null,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+
+  constraint categories_name_len_check check (char_length(btrim(name)) between 1 and 12),
+  -- 같은 이름이 둘이면 사이드바에서 어느 쪽을 누른 건지 알 수 없다.
+  constraint categories_name_unique unique (user_id, name)
+);
+
+comment on table public.categories is
+  '사용자가 직접 만들고 지우는 일정 분류. 한 단계뿐이다(v1.5).';
+
+create index if not exists categories_user_id_idx
+  on public.categories (user_id, sort_order);
+
+alter table public.categories enable row level security;
+
+-- 새 테이블은 public 스키마 기본 권한으로 anon에도 열리므로 명시적으로 회수한다.
+revoke all on public.categories from anon;
+grant select, insert, update, delete on public.categories to authenticated;
+
+-- 정책은 "있으면 지우고 다시 만든다" — create policy에는 if not exists가 없다.
+drop policy if exists "categories: owner select" on public.categories;
+create policy "categories: owner select" on public.categories
+  for select to authenticated using ((select auth.uid()) = user_id);
+
+drop policy if exists "categories: owner insert" on public.categories;
+create policy "categories: owner insert" on public.categories
+  for insert to authenticated with check ((select auth.uid()) = user_id);
+
+-- update는 USING과 WITH CHECK 둘 다 필요하다. WITH CHECK가 없으면 소유자를 넘길 수 있다.
+drop policy if exists "categories: owner update" on public.categories;
+create policy "categories: owner update" on public.categories
+  for update to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+drop policy if exists "categories: owner delete" on public.categories;
+create policy "categories: owner delete" on public.categories
+  for delete to authenticated using ((select auth.uid()) = user_id);
+
+
+-- ============================================================
+--  2. tasks · settings 에 새 칸 붙이기
+-- ============================================================
+
+alter table public.tasks
+  add column if not exists is_starred boolean not null default false;
+
+alter table public.tasks
+  add column if not exists category_id bigint
+  references public.categories(id) on delete set null;
+
+create index if not exists tasks_category_id_idx on public.tasks (category_id);
+
+comment on column public.tasks.is_starred is
+  '특별 일정 표시. 목록 최상단으로 올라가고 달력에서도 강조된다.';
+comment on column public.tasks.category_id is
+  '사용자가 만든 분류. 분류를 지우면 null이 되어 미분류로 남는다.';
+
+alter table public.settings
+  add column if not exists filter_category_id bigint
+  references public.categories(id) on delete set null;
+
+comment on column public.settings.filter_category_id is
+  '분류 필터. null이면 전체 보기. 보고 있던 분류를 지우면 자동으로 null이 된다.';
+
+
+-- ============================================================
+--  3. 테마 4종(블루·세이지·코랄·모카) 허용
+-- ============================================================
+
+alter table public.settings drop constraint if exists settings_theme_check;
+
+alter table public.settings
+  add constraint settings_theme_check
+  check (theme in ('pink', 'lavender', 'mint', 'cream', 'gray',
+                   'blue', 'sage', 'coral', 'mocha'));
+
+
+-- ============================================================
+--  4. 아이콘을 이모지로 바꾸기
+-- ============================================================
+
+-- 값을 열거하던 옛 제약을 푼다. 이모지는 종류를 미리 다 적을 수 없다.
+alter table public.tasks drop constraint if exists tasks_icon_check;
+alter table public.tasks drop constraint if exists tasks_icon_len_check;
+
+-- 이미 이모지인 행은 else 로 빠져서 그대로 남는다 — 다시 돌려도 안전하다.
+update public.tasks set icon = case icon
+  when 'circle'   then '📌'
+  when 'star'     then '⭐'
+  when 'heart'    then '❤️'
+  when 'triangle' then '🔺'
+  when 'square'   then '🟦'
+  when 'document' then '📋'
+  when 'chat'     then '💬'
+  when 'folder'   then '📁'
+  when 'cup'      then '☕'
+  when 'dumbbell' then '💪'
+  when 'cake'     then '🎂'
+  when 'cross'    then '🏥'
+  when 'book'     then '📚'
+  when 'bag'      then '🛒'
+  when 'pin'      then '📌'
+  else icon
+end
+where icon is not null;
+
+-- 값 대신 길이만 막는다. (❤️·✈️처럼 변이 선택자가 붙으면 2코드포인트다.)
+alter table public.tasks
+  add constraint tasks_icon_len_check
+  check (icon is null or char_length(icon) between 1 and 8);
+
+comment on column public.tasks.icon is
+  '이모지 문자. null이면 📌으로 표시. v1.3까지는 프리셋 이름이었다.';
+comment on column public.tasks.icon_color is
+  '더 이상 화면에 쓰지 않는다(v1.4). 예전 데이터 보존용.';
+
+
+-- ============================================================
+--  5. 옛 '일/일상' 분류가 쓰이고 있었다면 새 분류로 옮기기
+--
+--  area 칸이 아직 남아 있을 때만 돈다. 이미 지워졌으면 통째로 건너뛴다.
+-- ============================================================
+
+do $outer$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'tasks' and column_name = 'area'
+  ) then
+    -- 쓰고 있던 사용자에게만 그 이름의 분류를 만들어준다.
+    execute $mig$
+      insert into public.categories (user_id, name, sort_order)
+      select distinct
+        t.user_id,
+        case t.area when 'work' then '일' else '일상' end,
+        case t.area when 'work' then 0 else 1 end
+      from public.tasks t
+      where t.area is not null
+      on conflict (user_id, name) do nothing
+    $mig$;
+
+    -- 그 할 일들을 새 분류에 다시 건다.
+    execute $mig$
+      update public.tasks t
+      set category_id = c.id
+      from public.categories c
+      where c.user_id = t.user_id
+        and t.area is not null
+        and c.name = case t.area when 'work' then '일' else '일상' end
+    $mig$;
+  end if;
+end
+$outer$;
+
+
+-- ============================================================
+--  6. 이제 안 쓰는 옛 칸 지우기
+-- ============================================================
+
+alter table public.tasks drop constraint if exists tasks_category_pair_check;
+alter table public.tasks drop constraint if exists tasks_area_check;
+
+alter table public.tasks drop column if exists area;
+alter table public.tasks drop column if exists category;
+
+alter table public.settings drop constraint if exists settings_filter_pair_check;
+alter table public.settings drop constraint if exists settings_filter_area_check;
+
+alter table public.settings drop column if exists filter_area;
+alter table public.settings drop column if exists filter_category;
+
+
+-- ============================================================
+--  7. 확인 — 아래 표가 전부 ✅ 면 성공입니다
+-- ============================================================
+
+with check_list(순서, 항목, 통과) as (
+  select 1, 'categories 테이블이 생겼다', exists (
+    select 1 from information_schema.tables
+    where table_schema = 'public' and table_name = 'categories')
+  union all
+  select 2, 'tasks.category_id 칸이 생겼다', exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'tasks' and column_name = 'category_id')
+  union all
+  select 3, 'tasks.is_starred 칸이 생겼다', exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'tasks' and column_name = 'is_starred')
+  union all
+  select 4, 'settings.filter_category_id 칸이 생겼다', exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'settings' and column_name = 'filter_category_id')
+  union all
+  select 5, '옛 tasks.area 칸이 사라졌다', not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'tasks' and column_name = 'area')
+  union all
+  select 6, '옛 settings.filter_area 칸이 사라졌다', not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'settings' and column_name = 'filter_area')
+)
+select 항목, case when 통과 then '✅ 완료' else '❌ 실패' end as 결과
+from check_list
+order by 순서;
