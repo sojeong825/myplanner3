@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { getDday, type DateKey } from "@/lib/date";
 import { StarMark, TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
@@ -51,13 +51,15 @@ function Tab({
 }
 
 export default function ScheduleCard({ upcoming, overdue, today, onSelect }: Props) {
+  /**
+   * 어느 탭을 보고 있는지. **오직 사용자가 누를 때만 바뀐다.**
+   *
+   * 한때 '놓친 일정이 0건이면 다가오는 일정으로 돌아간다'는 효과를 넣었는데,
+   * 그게 탭을 아예 못 누르게 만들었다 — 지난 일정이 없을 때 탭을 누르면 상태가
+   * 바뀌자마자 되돌려져서, 눌러도 아무 반응이 없는 것처럼 보였다.
+   * 비어 있으면 비었다고 보여주면 될 일이지 탭을 막을 일이 아니다.
+   */
   const [tab, setTab] = useState<TabId>("upcoming");
-
-  // 놓친 일정을 전부 체크해서 비면 보고 있을 이유가 없으므로 돌아온다.
-  // (반대로 자동으로 '지난 일정'을 열지는 않는다 — 보고 있던 화면이 멋대로 바뀐다.)
-  useEffect(() => {
-    if (tab === "overdue" && overdue.length === 0) setTab("upcoming");
-  }, [tab, overdue.length]);
 
   const tasks = tab === "upcoming" ? upcoming : overdue;
 
