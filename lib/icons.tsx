@@ -85,21 +85,13 @@ export function TaskIcon({ icon, done = false, className = "text-[13px]" }: Prop
 const STAR_PATH =
   "M12 3.4l2.6 5.3 5.8.85-4.2 4.1 1 5.8L12 16.7l-5.2 2.75 1-5.8-4.2-4.1 5.8-.85z";
 
-/** 켜진 항목 옆에 붙는 읽기 전용 표식. 색은 반드시 --accent를 따라간다. */
-export function StarMark({ className = "size-3" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className={`${className} shrink-0`}
-      fill="var(--accent)"
-    >
-      <path d={STAR_PATH} />
-    </svg>
-  );
-}
-
-/** 별표를 켜고 끄는 버튼. 꺼져 있으면 테두리만 있는 빈 별이다. */
+/**
+ * 별표를 켜고 끄는 버튼. 꺼져 있으면 테두리만 있는 빈 별이다.
+ *
+ * 별은 **켜고 끄는 자리에만** 있다. 켜진 일정을 목록·달력에서 알아보는 건 형광펜
+ * (globals.css의 `.marker`)이 맡는다. 한때 제목 앞에 ★을 붙였는데, 이미 일정마다
+ * 이모지가 있어서 작은 글자 옆에 기호가 둘씩 늘어서면 알아보기 어려웠다.
+ */
 export function StarButton({
   starred,
   onToggle,

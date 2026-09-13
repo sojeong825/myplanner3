@@ -32,12 +32,8 @@ function Row({
   return (
     // 보더·그림자 없이 여백만으로 구분한다. hover 때만 아주 옅게 톤이 바뀐다.
     // 체크박스는 완료 토글, 이름 영역은 수정 모달 — 클릭 영역을 나눠둔다.
-    // 별표가 켜진 행만 배경으로 들어올린다.
-    <li
-      className={`group flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 transition hover:bg-canvas ${
-        task.is_starred && !task.is_done ? "bg-soft/60" : "bg-card"
-      }`}
-    >
+    // 특별 일정은 행 배경이 아니라 제목의 형광펜으로 구분한다(달력과 같은 규칙).
+    <li className="group flex items-center gap-2.5 rounded-[10px] bg-card px-3 py-2.5 transition hover:bg-canvas">
       <label className="flex cursor-pointer items-center" title="완료 표시">
         <input
           type="checkbox"
@@ -69,12 +65,8 @@ function Row({
 
         <span
           className={`truncate text-[13px] ${
-            task.is_done
-              ? "text-ink-faint line-through"
-              : task.is_starred
-                ? "font-medium text-ink"
-                : "text-ink"
-          }`}
+            task.is_done ? "text-ink-faint line-through" : "text-ink"
+          } ${task.is_starred && !task.is_done ? "marker" : ""}`}
         >
           {task.title}
         </span>

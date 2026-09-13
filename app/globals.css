@@ -275,6 +275,31 @@ body {
   letter-spacing: normal;
 }
 
+/*
+ * 특별 일정 표시 — 형광펜으로 그은 자국.
+ *
+ * 한때 제목 앞에 ★을 붙였는데, 이미 일정마다 이모지가 붙어 있어서 작은 글자 옆에
+ * 기호가 둘씩 늘어서면 무엇이 무엇인지 알아보기 어려웠다. 형광펜은 자리를 전혀
+ * 차지하지 않으면서 한눈에 띈다.
+ *
+ * 글자 아래쪽만 덮는 게 핵심이다. 전체를 채우면 형광펜이 아니라 그냥 배경색이 된다.
+ * 색은 --accent를 옅게 섞어 테마를 따라간다.
+ */
+.marker {
+  background-image: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--accent) 45%, transparent) 62%,
+    transparent 62%
+  );
+  /* 줄이 넘어가도 줄마다 다시 그린다. 없으면 첫 줄에만 칠해진다(주간 뷰가 여러 줄). */
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  /* 글자 양옆으로 조금 삐져나오게 하되, 음수 margin으로 자리는 늘리지 않는다. */
+  padding: 0 0.18em;
+  margin: 0 -0.18em;
+  border-radius: 0.15em;
+}
+
 /* 날짜 입력의 기본 달력 아이콘을 톤에 맞게 흐리게 */
 input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0.45;

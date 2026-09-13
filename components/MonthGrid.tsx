@@ -1,7 +1,7 @@
 "use client";
 
 import { buildMonthGrid, WEEKDAYS, type DateKey } from "@/lib/date";
-import { StarMark, TaskIcon } from "@/lib/icons";
+import { TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
 /**
@@ -105,16 +105,18 @@ export default function MonthGrid({
                     }}
                     title={task.title}
                     className={`flex cursor-pointer items-center gap-1 rounded px-0.5 text-left text-[11px] leading-4 ${MONTH_TRACKING} transition hover:bg-soft ${
-                      task.is_done
-                        ? "text-ink-faint line-through"
-                        : task.is_starred
-                          ? "font-medium text-ink"
-                          : "text-ink"
+                      task.is_done ? "text-ink-faint line-through" : "text-ink"
                     }`}
                   >
-                    {task.is_starred && !task.is_done && <StarMark className="size-2.5" />}
                     <TaskIcon icon={task.icon} done={task.is_done} className="text-[11px]" />
-                    <span className="truncate">{task.title}</span>
+                    {/* 특별 일정은 제목에 형광펜을 긋는다. 완료된 건 이미 흐려서 긋지 않는다. */}
+                    <span
+                      className={`truncate ${
+                        task.is_starred && !task.is_done ? "marker" : ""
+                      }`}
+                    >
+                      {task.title}
+                    </span>
                   </button>
                 ))}
               </div>

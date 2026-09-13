@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getDday, type DateKey } from "@/lib/date";
-import { StarMark, TaskIcon } from "@/lib/icons";
+import { TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
 type Props = {
@@ -180,12 +180,11 @@ export default function TaskSearch({ tasks, today, onSelect }: Props) {
                         i === active ? "bg-soft" : ""
                       }`}
                     >
-                      {task.is_starred && <StarMark />}
                       <TaskIcon icon={task.icon} done={task.is_done} />
                       <span
                         className={`truncate text-[13px] ${
                           task.is_done ? "text-ink-faint line-through" : "text-ink"
-                        }`}
+                        } ${task.is_starred && !task.is_done ? "marker" : ""}`}
                       >
                         {task.title}
                       </span>

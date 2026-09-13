@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { getDday, type DateKey } from "@/lib/date";
-import { StarMark, TaskIcon } from "@/lib/icons";
+import { TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
 type TabId = "upcoming" | "overdue";
@@ -99,17 +99,10 @@ export default function ScheduleCard({ upcoming, overdue, today, onSelect }: Pro
                   type="button"
                   onClick={() => onSelect(task)}
                   title={task.memo ? `${task.title}\n${task.memo}` : task.title}
-                  className={`flex w-full cursor-pointer items-center gap-2 rounded-[10px] px-3 py-2.5 text-left transition hover:bg-canvas ${
-                    task.is_starred ? "bg-soft/60" : "bg-card"
-                  }`}
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-[10px] bg-card px-3 py-2.5 text-left transition hover:bg-canvas"
                 >
-                  {task.is_starred && <StarMark />}
                   <TaskIcon icon={task.icon} />
-                  <span
-                    className={`truncate text-[13px] ${
-                      task.is_starred ? "font-medium" : ""
-                    }`}
-                  >
+                  <span className={`truncate text-[13px] ${task.is_starred ? "marker" : ""}`}>
                     {task.title}
                   </span>
                   <span

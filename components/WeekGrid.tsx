@@ -1,7 +1,7 @@
 "use client";
 
 import { buildWeek, WEEKDAYS, type DateKey } from "@/lib/date";
-import { StarMark, TaskIcon } from "@/lib/icons";
+import { TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
 /**
@@ -91,20 +91,20 @@ export default function WeekGrid({
                   }}
                   title={task.title}
                   // 항목은 흰 배경 + 여백만으로 구분한다. 완료는 텍스트만 흐리게.
-                  className={`flex cursor-pointer items-start gap-1.5 rounded-[10px] px-2 py-1.5 text-left text-[11px] leading-snug ${WEEK_TRACKING} transition hover:bg-soft ${
-                    task.is_done
-                      ? "bg-card text-ink-faint line-through"
-                      : task.is_starred
-                        ? "bg-soft/60 font-medium text-ink"
-                        : "bg-card text-ink"
+                  className={`flex cursor-pointer items-start gap-1.5 rounded-[10px] bg-card px-2 py-1.5 text-left text-[11px] leading-snug ${WEEK_TRACKING} transition hover:bg-soft ${
+                    task.is_done ? "text-ink-faint line-through" : "text-ink"
                   }`}
                 >
                   {/* 여러 줄로 넘어가도 첫 줄에 맞춰 정렬 */}
-                  {task.is_starred && !task.is_done && (
-                    <StarMark className="mt-px size-2.5" />
-                  )}
                   <TaskIcon icon={task.icon} done={task.is_done} className="mt-px text-[11px]" />
-                  <span className="line-clamp-3">{task.title}</span>
+                  {/* 형광펜은 box-decoration-break: clone이라 줄이 넘어가도 줄마다 그어진다. */}
+                  <span
+                    className={`line-clamp-3 ${
+                      task.is_starred && !task.is_done ? "marker" : ""
+                    }`}
+                  >
+                    {task.title}
+                  </span>
                 </button>
               ))}
             </div>

@@ -80,7 +80,10 @@ export default function TaskDetail({
               task.is_done ? "text-ink-faint line-through" : "text-ink"
             }`}
           >
-            {task.title}
+            {/* 형광펜은 글자에만 그어야 해서 제목 전체가 아니라 안쪽 span에 건다. */}
+            <span className={task.is_starred && !task.is_done ? "marker" : ""}>
+              {task.title}
+            </span>
           </h2>
           {/* 보기 화면에서도 별표만은 바로 켜고 끌 수 있다 — 수정할 내용이 아니라 표시다. */}
           <StarButton
