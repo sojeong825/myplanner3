@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FONT_CREDITS, FONTS, type FontId } from "@/lib/fonts";
+import { FONTS, type FontId } from "@/lib/fonts";
 
 type Props = {
   value: FontId;
@@ -52,71 +52,63 @@ export default function FontPicker({ value, onChange }: Props) {
   }, [open]);
 
   return (
-    <div>
-      <div ref={wrapRef} className="relative">
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          className="flex w-full items-center gap-2 rounded-lg border border-line bg-canvas px-3 py-2.5 text-left transition hover:border-ink-faint"
+    <div ref={wrapRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className="flex w-full items-center gap-2 rounded-lg border border-line bg-canvas px-3 py-2.5 text-left transition hover:border-ink-faint"
+      >
+        <span style={styleOf(current.family)} className="text-[15px] text-ink">
+          {current.label}
+        </span>
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          className={`size-3.5 shrink-0 text-ink-faint transition ${open ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
         >
-          <span style={styleOf(current.family)} className="text-[15px] text-ink">
-            {current.label}
-          </span>
-          <svg
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            className={`size-3.5 shrink-0 text-ink-faint transition ${open ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-          >
-            <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+          <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
 
-        {open && (
-          <div
-            role="listbox"
-            aria-label="글꼴"
-            // 설정 모달 안에 뜨는 목록이라 z-index를 모달보다 높게 둔다.
-            className="absolute inset-x-0 top-[calc(100%+4px)] z-[70] max-h-[248px] overflow-y-auto rounded-lg border border-line bg-card py-1 shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)]"
-          >
-            {FONTS.map((font) => {
-              const active = font.id === value;
-              return (
-                <button
-                  key={font.id}
-                  type="button"
-                  role="option"
-                  aria-selected={active}
-                  onClick={() => {
-                    onChange(font.id);
-                    setOpen(false);
-                  }}
-                  className={`flex w-full items-center gap-2 px-3 py-2 text-left transition ${
-                    active ? "bg-soft" : "hover:bg-soft/50"
-                  }`}
+      {open && (
+        <div
+          role="listbox"
+          aria-label="글꼴"
+          // 설정 모달 안에 뜨는 목록이라 z-index를 모달보다 높게 둔다.
+          className="absolute inset-x-0 top-[calc(100%+4px)] z-[70] max-h-[248px] overflow-y-auto rounded-lg border border-line bg-card py-1 shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)]"
+        >
+          {FONTS.map((font) => {
+            const active = font.id === value;
+            return (
+              <button
+                key={font.id}
+                type="button"
+                role="option"
+                aria-selected={active}
+                onClick={() => {
+                  onChange(font.id);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center gap-2 px-3 py-2 text-left transition ${
+                  active ? "bg-soft" : "hover:bg-soft/50"
+                }`}
+              >
+                <span
+                  style={styleOf(font.family)}
+                  className={`text-[15px] ${active ? "text-ink" : "text-ink-mid"}`}
                 >
-                  <span
-                    style={styleOf(font.family)}
-                    className={`text-[15px] ${active ? "text-ink" : "text-ink-mid"}`}
-                  >
-                    {font.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/*
-        대부분은 출처 표시 의무가 없지만 리디바탕은 라이선스에서 표기를 권한다.
-        한 곳만 적으면 왜 저것만 적혀 있는지 이상해서 전부 적는다.
-      */}
-      <p className="px-1 pt-2 text-[10px] leading-relaxed text-ink-faint">{FONT_CREDITS}</p>
+                  {font.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -53,7 +53,7 @@ export default function WeekGrid({
           >
             <div className="flex flex-col items-center gap-1 py-3">
               <span
-                className={`text-[12px] ${
+                className={`text-[13px] ${
                   day.weekday === 0 ? "text-accent-deep" : "text-ink-soft"
                 }`}
               >
@@ -62,8 +62,8 @@ export default function WeekGrid({
               <span
                 className={
                   isToday
-                    ? "grid size-7 place-items-center rounded-full bg-accent text-[13px] font-medium text-white"
-                    : "grid size-7 place-items-center text-[13px] text-ink-mid"
+                    ? "grid size-8 place-items-center rounded-full bg-accent text-[15px] font-medium text-white"
+                    : "grid size-8 place-items-center text-[15px] text-ink-mid"
                 }
               >
                 {day.day}
@@ -81,12 +81,12 @@ export default function WeekGrid({
                   }}
                   title={task.title}
                   // 항목은 흰 배경 + 여백만으로 구분한다. 완료는 텍스트만 흐리게.
-                  className={`flex cursor-pointer items-start gap-1.5 rounded-[10px] bg-card px-2 py-1.5 text-left text-[11px] leading-snug transition hover:bg-soft ${
+                  className={`flex cursor-pointer items-start gap-1.5 rounded-[10px] bg-card px-2 py-1.5 text-left text-[13px] leading-snug transition hover:bg-soft ${
                     task.is_done ? "text-ink-faint line-through" : "text-ink"
                   }`}
                 >
                   {/* 여러 줄로 넘어가도 첫 줄에 맞춰 정렬 */}
-                  <TaskIcon icon={task.icon} done={task.is_done} className="mt-px text-[11px]" />
+                  <TaskIcon icon={task.icon} done={task.is_done} className="mt-px text-[13px]" />
                   {/* 형광펜은 box-decoration-break: clone이라 줄이 넘어가도 줄마다 그어진다. */}
                   <span className="min-w-0">
                     {task.due_time && !task.is_done && (

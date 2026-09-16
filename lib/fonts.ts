@@ -57,13 +57,3 @@ export function isFontId(v: unknown): v is FontId {
 export function fontLabel(id: FontId): string {
   return FONTS.find((f) => f.id === id)!.label;
 }
-
-/**
- * 글꼴을 제공한 곳. 드롭다운 아래에 적는다.
- *
- * 대부분은 출처 표시 의무가 없지만, 리디바탕은 라이선스에서 출처 표기를 권한다.
- * 한 곳만 적으면 왜 저것만 적혀 있는지 이상하니 전부 적는다.
- */
-export const FONT_CREDITS =
-  "글꼴 제공: 네이버, 조선일보, 리디주식회사, 한국출판인회의, G마켓, 카페24, " +
-  "교보문고, 한국교육학술정보원, 온글잎(보이저엑스), 그리운, Monad ABXY, 길형진";
