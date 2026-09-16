@@ -101,16 +101,19 @@ export default function TaskDetail({
               {task.title}
             </span>
           </h2>
+          {/*
+            삭제가 왼쪽, 별표가 오른쪽이다. 별표는 자주 누르는 것이라 모서리에 가장
+            가까운 자리를 준다 — 삭제는 실수로 누르면 곤란하니 가장자리에서 한 칸 안쪽이다.
+          */}
+          <TrashButton onClick={() => setConfirmOpen(true)} className="size-9 text-ink-faint" />
+
           {/* 보기 화면에서도 별표만은 바로 켜고 끌 수 있다 — 수정할 내용이 아니라 표시다. */}
           <StarButton
             starred={task.is_starred}
             onToggle={() => onToggleStar(task)}
-            className={`size-9 ${task.is_starred ? "text-accent" : "text-ink-faint"}`}
+            className={`-mr-1 size-9 ${task.is_starred ? "text-accent" : "text-ink-faint"}`}
             iconClassName="size-6"
           />
-
-          {/* 삭제는 별 바로 옆. 수정 모달을 거치지 않고 여기서 바로 지울 수 있다. */}
-          <TrashButton onClick={() => setConfirmOpen(true)} className="-mr-1 size-9" />
         </div>
 
         <div className="mt-5 space-y-3">

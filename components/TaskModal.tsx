@@ -2,17 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import DatePicker from "@/components/DatePicker";
+import EmojiPicker from "@/components/EmojiPicker";
 import { autoIcon } from "@/lib/autoIcon";
 import { categoryName, type Category } from "@/lib/categories";
 import type { DateKey } from "@/lib/date";
-import {
-  firstGrapheme,
-  StarButton,
-  TASK_EMOJIS,
-  TaskIcon,
-  toIcon,
-  TrashButton,
-} from "@/lib/icons";
+import { StarButton, TaskIcon, toIcon, TrashButton } from "@/lib/icons";
 import type { NewTask, Task } from "@/lib/types";
 
 type Props = {
@@ -157,6 +151,11 @@ export default function TaskModal({
             {editing ? "할 일 수정" : "할 일 추가"}
           </h2>
 
+          {/* 보기 모달과 같은 순서 — 삭제가 왼쪽, 별표가 오른쪽이다. */}
+          {editing && (
+            <TrashButton onClick={() => setConfirmOpen(true)} className="size-9 text-ink-faint" />
+          )}
+
           {/*
             특별 일정은 라벨 없이 별 하나로만 둔다 — 켜짐/꺼짐이 모양으로 바로 읽힌다.
             라벨이 없는 만큼 별을 크게 그려야 눈에 들어온다.
@@ -164,13 +163,9 @@ export default function TaskModal({
           <StarButton
             starred={starred}
             onToggle={() => setStarred((v) => !v)}
-            className={`size-9 ${starred ? "text-accent" : "text-ink-faint"}`}
+            className={`-mr-1 size-9 ${starred ? "text-accent" : "text-ink-faint"}`}
             iconClassName="size-6"
           />
-
-          {editing && (
-            <TrashButton onClick={() => setConfirmOpen(true)} className="-mr-1 size-9" />
-          )}
         </div>
 
         {/*
@@ -187,7 +182,8 @@ export default function TaskModal({
               입력칸 안에 둔 이유는 제목과 함께 읽히기 때문 — 따로 떼어놓으면 이게
               이 일정의 아이콘이라는 게 덜 분명하다.
             */}
-            <div className="mt-1.5 flex items-center gap-1 rounded-lg border border-line bg-canvas pr-3 focus-within:border-accent">
+            {/* relative: 이모지 팝오버가 이 칸을 기준으로 아래에 붙는다. */}
+            <div className="relative mt-1.5 flex items-center gap-1 rounded-lg border border-line bg-canvas pr-3 focus-within:border-accent">
               <button
                 type="button"
                 onClick={() => setIconOpen((v) => !v)}
@@ -206,6 +202,19 @@ export default function TaskModal({
                 maxLength={120}
                 className="min-w-0 flex-1 bg-transparent py-2.5 text-[14px] outline-none placeholder:text-ink-faint"
               />
+
+              {iconOpen && (
+                <EmojiPicker
+                  value={icon}
+                  isAuto={pickedIcon === null}
+                  onPick={(e) => setPickedIcon(e)}
+                  onAuto={() => {
+                    setPickedIcon(null);
+                    setIconOpen(false);
+                  }}
+                  onClose={() => setIconOpen(false)}
+                />
+              )}
             </div>
 
             {!iconOpen && (
@@ -216,68 +225,6 @@ export default function TaskModal({
               </p>
             )}
           </label>
-
-          {/* 이모지 고르기 — 평소에는 접어둔다. 늘 펼쳐두면 모달이 화면을 넘어간다. */}
-          {iconOpen && (
-            <div className="rounded-xl border border-line bg-canvas p-3">
-              <div className="flex items-center">
-                <span className="text-[12px] text-ink-soft">아이콘</span>
-                {pickedIcon !== null && (
-                  <button
-                    type="button"
-                    // 자동으로 되돌리기. 고른 값을 지우면 제목·분류를 따라 다시 움직인다.
-                    onClick={() => setPickedIcon(null)}
-                    className="ml-auto text-[11px] text-ink-faint underline underline-offset-2 transition hover:text-ink-soft"
-                  >
-                    자동으로 되돌리기
-                  </button>
-                )}
-              </div>
-
-              <div role="radiogroup" aria-label="아이콘" className="mt-2 grid grid-cols-6 gap-1.5">
-                {TASK_EMOJIS.map(({ emoji, label }) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    role="radio"
-                    aria-checked={icon === emoji}
-                    aria-label={label}
-                    title={label}
-                    onClick={() => setPickedIcon(emoji)}
-                    className={`grid aspect-square place-items-center rounded-[10px] border bg-card transition ${
-                      icon === emoji
-                        ? "border-accent-deep ring-2 ring-soft-deep"
-                        : "border-line hover:border-ink-faint"
-                    }`}
-                  >
-                    <TaskIcon icon={emoji} className="text-[17px]" />
-                  </button>
-                ))}
-              </div>
-
-              {/*
-                목록에 없는 이모지도 쓸 수 있어야 한다. 윈도우는 Win + . , 맥은
-                Control + Command + Space 로 이모지 판을 연다.
-              */}
-              <label className="mt-2.5 flex items-center gap-2">
-                <span className="shrink-0 text-[11px] text-ink-soft">직접 넣기</span>
-                <input
-                  value={pickedIcon ?? ""}
-                  onChange={(e) => {
-                    // 문장을 붙여넣거나 여러 개를 넣어도 맨 앞 한 글자만 남긴다.
-                    const first = firstGrapheme(e.target.value);
-                    setPickedIcon(first);
-                  }}
-                  placeholder="🐶"
-                  aria-label="아이콘 직접 입력"
-                  className="emoji w-16 rounded-lg border border-line bg-card px-2 py-1.5 text-center text-[15px] outline-none focus:border-accent"
-                />
-                <span className="text-[11px] leading-snug text-ink-faint">
-                  Win + . 로 이모지 판을 열 수 있어요
-                </span>
-              </label>
-            </div>
-          )}
 
           <div>
             <span className="text-[12px] text-ink-soft">

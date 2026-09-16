@@ -203,12 +203,13 @@ export function StarButton({
 /**
  * 삭제 버튼. 보기 모달과 수정 모달이 같은 모양을 쓰도록 여기 둔다.
  *
- * 색은 테마를 따라가지 않는다(--danger 고정). 민트 테마에서 삭제가 초록이면
- * 위험 신호로 읽히지 않는다.
+ * 평소 색은 옆에 있는 별과 같은 톤(--ink-faint)이다. 나란히 놓인 두 버튼의 색이
+ * 다르면 그것만으로 시선이 한쪽에 쏠린다. 위험 신호는 **누른 뒤**가 맡는다 —
+ * hover에서 빨강으로 바뀌고, 확인 창의 '삭제하기'는 그대로 빨강이다.
  */
 export function TrashButton({
   onClick,
-  className = "size-9",
+  className = "size-9 text-ink-faint",
   iconClassName = "size-5",
 }: {
   onClick: () => void;
@@ -221,7 +222,7 @@ export function TrashButton({
       onClick={onClick}
       aria-label="일정 삭제"
       title="삭제"
-      className={`grid shrink-0 cursor-pointer place-items-center rounded-full text-danger transition hover:bg-danger/10 hover:text-danger-deep ${className}`}
+      className={`grid shrink-0 cursor-pointer place-items-center rounded-full transition hover:bg-danger/10 hover:text-danger ${className}`}
     >
       <svg
         viewBox="0 0 24 24"
