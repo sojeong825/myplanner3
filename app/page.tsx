@@ -21,7 +21,7 @@ import {
 import { addDays, addMonthsKey, diffDays, todayKey, type DateKey } from "@/lib/date";
 import type { Reflection } from "@/lib/reflections";
 import type { FontId } from "@/lib/fonts";
-import type { CalendarView, ThemeId } from "@/lib/settings";
+import type { CalendarView, Settings, ThemeId } from "@/lib/settings";
 import {
   clearLocalData,
   createStore,
@@ -327,6 +327,22 @@ export default function Page() {
     [store],
   );
 
+  /**
+   * 설정 저장. 실패하면 화면 위 띠에 이유를 띄운다.
+   *
+   * useSettings.update는 실패해도 예외를 던지지 않고 SaveResult를 돌려준다. 그 결과를
+   * 그냥 버리면 저장이 안 됐는데도 화면에는 아무 일도 안 일어난 것처럼 보인다.
+   * 실제로 글꼴을 골랐는데 안 바뀌던 일이 이것이었다 — DB 제약에 없는 값이라
+   * 거절당했는데, 거절당했다는 사실이 아무 데도 드러나지 않았다.
+   */
+  const saveSetting = useCallback(
+    async (patch: Partial<Settings>) => {
+      const result = await update(patch);
+      setError(result.ok ? null : result.message);
+    },
+    [update],
+  );
+
   /** 별표는 완료와 같은 방식 — 먼저 화면을 바꾸고, 실패하면 되돌린다. */
   const toggleStar = useCallback(
     async (task: Task) => {
@@ -373,7 +389,7 @@ export default function Page() {
         );
         // 지운 분류를 보고 있었다면 전체 보기로 돌아간다.
         if (settings?.filter_category_id === category.id) {
-          void update({ filter_category_id: null });
+          void saveSetting({ filter_category_id: null });
         }
       } catch (e) {
         setError(message(e, "분류를 지우지 못했어요."));
@@ -488,7 +504,7 @@ export default function Page() {
         doneCount={done.length}
         categories={categories}
         filter={filter}
-        onFilterChange={(next) => void update({ filter_category_id: next })}
+        onFilterChange={(next) => void saveSetting({ filter_category_id: next })}
         onAddCategory={(name) => void addCategory(name)}
         onRemoveCategory={(category) => void removeCategory(category)}
         email={email}
@@ -496,7 +512,7 @@ export default function Page() {
         profileImage={settings.profile_image}
         profileX={settings.profile_pos_x}
         profileY={settings.profile_pos_y}
-        onNameChange={(planner_name) => void update({ planner_name })}
+        onNameChange={(planner_name) => void saveSetting({ planner_name })}
         // 사진과 위치를 한 번에 저장한다 — 두 번 나눠 저장하면 사진만 바뀌고 위치는
         // 예전 값으로 남는 순간이 생긴다.
         onProfileChange={(next) =>
@@ -534,7 +550,7 @@ export default function Page() {
               date={settings.counter_date}
               today={today}
               onSave={(counter_label, counter_date) =>
-                void update({ counter_label, counter_date })
+                void saveSetting({ counter_label, counter_date })
               }
             />
             <BannerCard
@@ -561,7 +577,7 @@ export default function Page() {
             onPrev={() => step(-1)}
             onNext={() => step(1)}
             onToday={() => setAnchor(todayKey())}
-            onViewChange={(next) => void update({ calendar_view: next })}
+            onViewChange={(next) => void saveSetting({ calendar_view: next })}
             onSelect={openView}
             // 헤더 버튼은 날짜 없이 연다. 달력 칸을 눌러야 날짜가 붙는다.
             onAdd={() => openAdd(null)}
@@ -634,8 +650,8 @@ export default function Page() {
         notify={notify}
         email={email}
         onClose={() => setSettingsOpen(false)}
-        onThemeChange={(theme: ThemeId) => void update({ theme })}
-        onFontChange={(font: FontId) => void update({ font })}
+        onThemeChange={(theme: ThemeId) => void saveSetting({ theme })}
+        onFontChange={(font: FontId) => void saveSetting({ font })}
         onChangePassword={changePassword}
         onSignIn={() => {
           setSettingsOpen(false);
