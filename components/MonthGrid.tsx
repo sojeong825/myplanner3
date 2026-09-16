@@ -16,8 +16,8 @@ type Props = {
   month: number;
   today: DateKey;
   tasksByDate: Map<DateKey, Task[]>;
-  selectedDate: DateKey | null;
-  onSelectDate: (key: DateKey) => void;
+  /** 빈 칸을 누르면 그 날짜로 '할 일 추가'가 바로 열린다(노션 달력과 같은 동작). */
+  onAddOn: (key: DateKey) => void;
   onSelect: (task: Task) => void;
 };
 
@@ -26,8 +26,7 @@ export default function MonthGrid({
   month,
   today,
   tasksByDate,
-  selectedDate,
-  onSelectDate,
+  onAddOn,
   onSelect,
 }: Props) {
   const cells = buildMonthGrid(year, month);
@@ -38,7 +37,7 @@ export default function MonthGrid({
         {WEEKDAYS.map((w, i) => (
           <div
             key={w}
-            className={`py-2.5 text-center text-[12px] ${MONTH_TRACKING} ${
+            className={`py-2.5 text-center text-[13px] ${MONTH_TRACKING} ${
               i === 0 ? "text-accent-deep" : "text-ink-soft"
             }`}
           >
@@ -51,37 +50,32 @@ export default function MonthGrid({
         {cells.map((cell) => {
           const dayTasks = tasksByDate.get(cell.key) ?? [];
           const isToday = cell.key === today;
-          const isSelected = cell.key === selectedDate;
 
           return (
             /*
-              칸 자체가 '이 날짜를 고른다' 버튼이다. 안에 일정 버튼이 들어가므로
-              <button>으로 감싸면 버튼 중첩이 되어 HTML이 깨진다 — div + role로 둔다.
-              고른 표시는 ring-inset이다. 바깥으로 나가는 링은 gap-px 격자에서 옆 칸을 덮는다.
+              칸을 누르면 그 날짜로 '할 일 추가'가 곧장 열린다. 안에 일정 버튼이
+              들어가므로 <button>으로 감쌀 수 없다(버튼 중첩) — div + role로 둔다.
             */
             <div
               key={cell.key}
               role="button"
               tabIndex={0}
-              aria-pressed={isSelected}
-              aria-label={`${cell.day}일 선택`}
-              onClick={() => onSelectDate(cell.key)}
+              aria-label={`${cell.day}일에 할 일 추가`}
+              onClick={() => onAddOn(cell.key)}
               onKeyDown={(e) => {
                 if (e.key !== "Enter" && e.key !== " ") return;
                 e.preventDefault();
-                onSelectDate(cell.key);
+                onAddOn(cell.key);
               }}
-              className={`flex min-h-[88px] cursor-pointer flex-col gap-1 overflow-hidden px-2 pb-1.5 pt-2 transition ${
+              className={`group/cell relative flex min-h-[96px] cursor-pointer flex-col gap-1 overflow-hidden px-2 pb-1.5 pt-2 transition hover:bg-canvas ${
                 isToday ? "bg-soft/50" : "bg-card"
-              } ${cell.inMonth ? "" : "opacity-45"} ${
-                isSelected ? "ring-2 ring-accent ring-inset" : "hover:bg-canvas"
-              }`}
+              } ${cell.inMonth ? "" : "opacity-45"}`}
             >
               <span
                 className={
                   isToday
-                    ? "grid size-5 shrink-0 place-items-center self-start rounded-full bg-accent text-[11px] font-medium text-white"
-                    : `self-start px-0.5 text-[12px] ${MONTH_TRACKING} ${
+                    ? "grid size-6 shrink-0 place-items-center self-start rounded-full bg-accent text-[12px] font-medium text-white"
+                    : `self-start px-0.5 text-[13px] ${MONTH_TRACKING} ${
                         cell.weekday === 0
                           ? "text-accent-deep"
                           : cell.inMonth
@@ -91,6 +85,14 @@ export default function MonthGrid({
                 }
               >
                 {cell.day}
+              </span>
+
+              {/*
+                누를 수 있다는 걸 알려주는 표시. 칸 전체가 버튼이라 이건 장식일 뿐이라
+                pointer-events-none으로 두고 클릭은 칸이 받는다.
+              */}
+              <span className="pointer-events-none absolute right-1.5 top-1.5 text-[13px] leading-none text-ink-faint opacity-0 transition group-hover/cell:opacity-100">
+                +
               </span>
 
               <div className="flex min-h-0 flex-col gap-0.5 overflow-hidden">
@@ -104,11 +106,11 @@ export default function MonthGrid({
                       onSelect(task);
                     }}
                     title={task.title}
-                    className={`flex cursor-pointer items-center gap-1 rounded px-0.5 text-left text-[11px] leading-4 ${MONTH_TRACKING} transition hover:bg-soft ${
+                    className={`flex cursor-pointer items-center gap-1 rounded px-0.5 text-left text-[12px] leading-5 ${MONTH_TRACKING} transition hover:bg-soft ${
                       task.is_done ? "text-ink-faint line-through" : "text-ink"
                     }`}
                   >
-                    <TaskIcon icon={task.icon} done={task.is_done} className="text-[11px]" />
+                    <TaskIcon icon={task.icon} done={task.is_done} className="text-[12px]" />
                     {/* 시간은 제목보다 앞에 둔다. 달력에서는 '몇 시에'가 먼저 읽혀야 한다. */}
                     {task.due_time && !task.is_done && (
                       <span className="shrink-0 text-ink-soft">{formatTime(task.due_time)}</span>

@@ -1,11 +1,13 @@
 "use client";
 
 import CategoryFilter from "@/components/CategoryFilter";
+import NotifyToggle from "@/components/NotifyToggle";
 import PlannerName from "@/components/PlannerName";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import ThemePicker from "@/components/ThemePicker";
 import type { Category, CategoryFilter as Filter } from "@/lib/categories";
 import type { SaveResult, ThemeId } from "@/lib/settings";
+import type { NotifyState } from "@/lib/useNotifications";
 
 type Props = {
   pendingCount: number;
@@ -25,6 +27,8 @@ type Props = {
   profileX: number;
   profileY: number;
   theme: ThemeId;
+  /** PC 알림 스위치 상태. 기기마다 다르므로 settings가 아니라 훅에서 온다. */
+  notify: NotifyState;
   onNameChange: (name: string) => void;
   onProfileChange: (next: {
     image?: string | null;
@@ -60,6 +64,7 @@ export default function Sidebar({
   profileX,
   profileY,
   theme,
+  notify,
   onNameChange,
   onProfileChange,
   onThemeChange,
@@ -122,6 +127,8 @@ export default function Sidebar({
       />
 
       <div className="mt-auto flex flex-col gap-4">
+        <NotifyToggle {...notify} />
+
         <ThemePicker value={theme} onChange={onThemeChange} />
 
         {signedIn && (

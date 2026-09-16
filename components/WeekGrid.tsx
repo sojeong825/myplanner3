@@ -15,8 +15,8 @@ type Props = {
   anchor: DateKey;
   today: DateKey;
   tasksByDate: Map<DateKey, Task[]>;
-  selectedDate: DateKey | null;
-  onSelectDate: (key: DateKey) => void;
+  /** 빈 칸을 누르면 그 날짜로 '할 일 추가'가 바로 열린다. */
+  onAddOn: (key: DateKey) => void;
   onSelect: (task: Task) => void;
 };
 
@@ -30,8 +30,7 @@ export default function WeekGrid({
   anchor,
   today,
   tasksByDate,
-  selectedDate,
-  onSelectDate,
+  onAddOn,
   onSelect,
 }: Props) {
   const days = buildWeek(anchor);
@@ -41,25 +40,23 @@ export default function WeekGrid({
       {days.map((day) => {
         const dayTasks = tasksByDate.get(day.key) ?? [];
         const isToday = day.key === today;
-        const isSelected = day.key === selectedDate;
 
         return (
-          // 월간과 같은 규칙 — 컬럼 전체가 '이 날짜를 고른다' 버튼이다(버튼 중첩을 피해 div).
+          // 월간과 같은 규칙 — 컬럼을 누르면 그 날짜로 추가가 열린다(버튼 중첩을 피해 div).
           <div
             key={day.key}
             role="button"
             tabIndex={0}
-            aria-pressed={isSelected}
-            aria-label={`${day.day}일 선택`}
-            onClick={() => onSelectDate(day.key)}
+            aria-label={`${day.day}일에 할 일 추가`}
+            onClick={() => onAddOn(day.key)}
             onKeyDown={(e) => {
               if (e.key !== "Enter" && e.key !== " ") return;
               e.preventDefault();
-              onSelectDate(day.key);
+              onAddOn(day.key);
             }}
-            className={`flex min-h-0 cursor-pointer flex-col transition ${
+            className={`flex min-h-0 cursor-pointer flex-col transition hover:bg-canvas ${
               isToday ? "bg-soft/50" : "bg-card"
-            } ${isSelected ? "ring-2 ring-accent ring-inset" : "hover:bg-canvas"}`}
+            }`}
           >
             <div className="flex flex-col items-center gap-1 py-3">
               <span

@@ -13,9 +13,8 @@ type Props = {
   today: DateKey;
   /** 마감일 기준으로 묶은 Task. 달력은 저장된 데이터가 아니라 이 파생 뷰를 그린다. */
   tasksByDate: Map<DateKey, Task[]>;
-  /** 사용자가 고른 날짜 칸. '+ 일정 추가'가 이 날짜로 채워진다. null이면 고른 것 없음. */
-  selectedDate: DateKey | null;
-  onSelectDate: (key: DateKey) => void;
+  /** 날짜 칸을 누르면 그 날짜로 '할 일 추가'가 열린다. */
+  onAddOn: (key: DateKey) => void;
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
@@ -82,8 +81,7 @@ export default function Calendar({
   view,
   today,
   tasksByDate,
-  selectedDate,
-  onSelectDate,
+  onAddOn,
   onPrev,
   onNext,
   onToday,
@@ -137,8 +135,7 @@ export default function Calendar({
           month={m}
           today={today}
           tasksByDate={tasksByDate}
-          selectedDate={selectedDate}
-          onSelectDate={onSelectDate}
+          onAddOn={onAddOn}
           onSelect={onSelect}
         />
       ) : (
@@ -146,8 +143,7 @@ export default function Calendar({
           anchor={anchor}
           today={today}
           tasksByDate={tasksByDate}
-          selectedDate={selectedDate}
-          onSelectDate={onSelectDate}
+          onAddOn={onAddOn}
           onSelect={onSelect}
         />
       )}

@@ -12,6 +12,8 @@ import {
   type Category,
   type NewCategory,
 } from "@/lib/categories";
+import type { DateKey } from "@/lib/date";
+import { coerceReflections, type Reflection } from "@/lib/reflections";
 import { coerceTask, coerceTasks, TASK_COLUMNS, type NewTask, type Task } from "@/lib/types";
 
 /**
@@ -33,12 +35,16 @@ export type Store = {
   addCategory(draft: NewCategory): Promise<Category>;
   /** 분류를 지워도 거기 달려 있던 할 일은 남는다 — 미분류로 돌아갈 뿐이다. */
   removeCategory(id: number): Promise<void>;
+  listReflections(): Promise<Reflection[]>;
+  /** 내용이 비면 그 날짜의 회고를 지운다 — 빈 회고는 '없는 것'과 같다. */
+  saveReflection(date: DateKey, content: string): Promise<void>;
   loadSettings(): Promise<Settings>;
   saveSettings(next: Settings): Promise<void>;
 };
 
 const LOCAL_TASKS_KEY = "my-planner:tasks";
 const LOCAL_CATEGORIES_KEY = "my-planner:categories";
+const LOCAL_REFLECTIONS_KEY = "my-planner:reflections";
 
 function fail(message: string, error: { message: string }): never {
   throw new Error(`${message}: ${error.message}`);
@@ -84,6 +90,15 @@ function writeLocalCategories(rows: Category[]) {
   window.localStorage.setItem(LOCAL_CATEGORIES_KEY, JSON.stringify(rows));
 }
 
+function readLocalReflections(): Reflection[] {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_REFLECTIONS_KEY);
+    return coerceReflections(raw ? JSON.parse(raw) : []);
+  } catch {
+    return [];
+  }
+}
+
 export function readLocalSettings(): Settings {
   try {
     const raw = window.localStorage.getItem(SETTINGS_KEY);
@@ -101,6 +116,7 @@ export function localTaskCount() {
 export function clearLocalData() {
   window.localStorage.removeItem(LOCAL_TASKS_KEY);
   window.localStorage.removeItem(LOCAL_CATEGORIES_KEY);
+  window.localStorage.removeItem(LOCAL_REFLECTIONS_KEY);
   window.localStorage.removeItem(SETTINGS_KEY);
 }
 
@@ -173,6 +189,17 @@ const guestStore: Store = {
     writeLocalTasks(
       readLocalTasks().map((t) => (t.category_id === id ? { ...t, category_id: null } : t)),
     );
+  },
+
+  async listReflections() {
+    return readLocalReflections();
+  },
+
+  async saveReflection(date, content) {
+    // 날짜가 열쇠다. 같은 날짜가 있으면 갈아끼우고, 내용이 비면 아예 뺀다.
+    const rest = readLocalReflections().filter((r) => r.date !== date);
+    const next = content.trim() ? [{ date, content }, ...rest] : rest;
+    window.localStorage.setItem(LOCAL_REFLECTIONS_KEY, JSON.stringify(next));
   },
 
   async loadSettings() {
@@ -283,6 +310,32 @@ function createServerStore(userId: string): Store {
       // tasks.category_id는 on delete set null이라 할 일은 미분류로 남는다.
       const { error } = await supabase.from("categories").delete().eq("id", id);
       if (error) fail("분류를 지우지 못했어요", error);
+    },
+
+    async listReflections() {
+      const { data, error } = await supabase
+        .from("reflections")
+        .select("date, content")
+        .order("date", { ascending: false });
+      if (error) fail("회고를 불러오지 못했어요", error);
+      return coerceReflections(data);
+    },
+
+    async saveReflection(date, content) {
+      if (!content.trim()) {
+        const { error } = await supabase.from("reflections").delete().eq("date", date);
+        if (error) fail("회고를 지우지 못했어요", error);
+        return;
+      }
+
+      // (user_id, date)가 유일하므로 upsert 한 번으로 새로 쓰기와 고쳐 쓰기가 다 된다.
+      const { error } = await supabase
+        .from("reflections")
+        .upsert(
+          { user_id: userId, date, content, updated_at: new Date().toISOString() },
+          { onConflict: "user_id,date" },
+        );
+      if (error) fail("회고를 저장하지 못했어요", error);
     },
 
     async loadSettings() {

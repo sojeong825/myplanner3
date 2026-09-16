@@ -1,5 +1,5 @@
 -- ============================================================
---  my planner 업데이트 SQL  (0005 ~ 0009 한 번에)
+--  my planner 업데이트 SQL  (0005 ~ 0010 한 번에)
 --
 --  ▶ 이 파일 전체를 복사해서 Supabase SQL Editor에 붙여넣고 Run 하세요.
 --
@@ -249,7 +249,54 @@ alter table public.tasks
 
 
 -- ============================================================
---  9. 확인 — 아래 표가 전부 ✅ 면 성공입니다
+--  9. 날짜별 회고 (v1.8)
+--
+--  하루에 하나씩 쓰는 회고. 날짜가 곧 열쇠라 (user_id, date)에 유일 제약을 건다.
+-- ============================================================
+
+create table if not exists public.reflections (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade default auth.uid(),
+  date date not null,
+  content text not null check (char_length(btrim(content)) between 1 and 2000),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+
+  constraint reflections_user_date_unique unique (user_id, date)
+);
+
+comment on table public.reflections is
+  '하루에 하나씩 쓰는 회고. 빈 내용은 저장하지 않고 행을 지운다.';
+
+create index if not exists reflections_user_date_idx
+  on public.reflections (user_id, date desc);
+
+alter table public.reflections enable row level security;
+
+revoke all on public.reflections from anon;
+grant select, insert, update, delete on public.reflections to authenticated;
+
+drop policy if exists "reflections: owner select" on public.reflections;
+create policy "reflections: owner select" on public.reflections
+  for select to authenticated using ((select auth.uid()) = user_id);
+
+drop policy if exists "reflections: owner insert" on public.reflections;
+create policy "reflections: owner insert" on public.reflections
+  for insert to authenticated with check ((select auth.uid()) = user_id);
+
+drop policy if exists "reflections: owner update" on public.reflections;
+create policy "reflections: owner update" on public.reflections
+  for update to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+drop policy if exists "reflections: owner delete" on public.reflections;
+create policy "reflections: owner delete" on public.reflections
+  for delete to authenticated using ((select auth.uid()) = user_id);
+
+
+-- ============================================================
+--  10. 확인 — 아래 표가 전부 ✅ 면 성공입니다
 -- ============================================================
 
 with check_list(순서, 항목, 통과) as (
@@ -276,6 +323,10 @@ with check_list(순서, 항목, 통과) as (
   select 6, '옛 settings.filter_area 칸이 사라졌다', not exists (
     select 1 from information_schema.columns
     where table_schema = 'public' and table_name = 'settings' and column_name = 'filter_area')
+  union all
+  select 9, 'reflections 테이블이 생겼다', exists (
+    select 1 from information_schema.tables
+    where table_schema = 'public' and table_name = 'reflections')
   union all
   select 8, 'tasks.due_time 칸이 생겼다', exists (
     select 1 from information_schema.columns
