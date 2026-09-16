@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { getDday, type DateKey } from "@/lib/date";
+import { formatTime, getDday, type DateKey } from "@/lib/date";
 import { TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
@@ -105,8 +105,14 @@ export default function ScheduleCard({ upcoming, overdue, today, onSelect }: Pro
                   <span className={`truncate text-[13px] ${task.is_starred ? "marker" : ""}`}>
                     {task.title}
                   </span>
+                  {/* 시간이 있으면 D-day 앞에 붙인다. 시간이 없는 일정이 대부분이라 늘 자리를 비워두지는 않는다. */}
+                  {task.due_time && (
+                    <span className="ml-auto shrink-0 text-[11px] text-ink-faint">
+                      {formatTime(task.due_time)}
+                    </span>
+                  )}
                   <span
-                    className={`ml-auto shrink-0 text-[12px] ${
+                    className={`shrink-0 text-[12px] ${task.due_time ? "" : "ml-auto"} ${
                       // 오늘 마감과 지나버린 것만 또렷하게 둔다.
                       dday.today || dday.overdue ? "text-ink" : "text-ink-soft"
                     }`}

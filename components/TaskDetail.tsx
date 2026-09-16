@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { categoryName, type Category } from "@/lib/categories";
-import { getDday, keyParts, type DateKey } from "@/lib/date";
-import { StarButton, TaskIcon } from "@/lib/icons";
+import { formatTime, getDday, keyParts, type DateKey } from "@/lib/date";
+import { StarButton, TaskIcon, TrashButton } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
 type Props = {
@@ -14,6 +14,9 @@ type Props = {
   onClose: () => void;
   onEdit: (task: Task) => void;
   onToggleStar: (task: Task) => void;
+  onDelete: (task: Task) => void;
+  /** 삭제 요청이 서버를 오가는 동안 버튼을 잠근다. */
+  saving: boolean;
 };
 
 /** '2026-09-20' → '2026년 9월 20일' */
@@ -45,15 +48,28 @@ export default function TaskDetail({
   onClose,
   onEdit,
   onToggleStar,
+  onDelete,
+  saving,
 }: Props) {
+  /** 삭제 확인 창이 떠 있는지. 수정 모달과 같은 방식이다. */
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // 다른 일정을 열면 확인 창은 닫는다. 남아 있으면 엉뚱한 일정을 지우게 된다.
+  useEffect(() => {
+    setConfirmOpen(false);
+  }, [task?.id]);
+
   useEffect(() => {
     if (!task) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      // 확인 창이 떠 있으면 그것만 닫는다.
+      if (confirmOpen) setConfirmOpen(false);
+      else onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [task, onClose]);
+  }, [task, confirmOpen, onClose]);
 
   if (!task) return null;
 
@@ -92,6 +108,9 @@ export default function TaskDetail({
             className={`size-9 ${task.is_starred ? "text-accent" : "text-ink-faint"}`}
             iconClassName="size-6"
           />
+
+          {/* 삭제는 별 바로 옆. 수정 모달을 거치지 않고 여기서 바로 지울 수 있다. */}
+          <TrashButton onClick={() => setConfirmOpen(true)} className="-mr-1 size-9" />
         </div>
 
         <div className="mt-5 space-y-3">
@@ -99,6 +118,9 @@ export default function TaskDetail({
             {task.due_date ? (
               <span className="flex flex-wrap items-baseline gap-2">
                 {longDate(task.due_date)}
+                {task.due_time && (
+                  <span className="text-ink-mid">{formatTime(task.due_time)}</span>
+                )}
                 <span
                   className={`rounded-full px-2 py-0.5 text-[11px] ${
                     dday!.overdue || dday!.today
@@ -150,6 +172,49 @@ export default function TaskDetail({
           </button>
         </div>
       </div>
+
+      {confirmOpen && (
+        // 보기 모달 위에 겹쳐 띄운다. 바깥을 누르거나 Esc를 누르면 이것만 닫힌다.
+        <div
+          className="fixed inset-0 z-[60] grid place-items-center bg-ink/25 p-4"
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            if (e.target === e.currentTarget) setConfirmOpen(false);
+          }}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="task-detail-delete-title"
+            className="w-full max-w-[300px] rounded-2xl border border-line bg-card p-6 shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)]"
+          >
+            <p id="task-detail-delete-title" className="text-center text-[15px] font-medium">
+              삭제할까요?
+            </p>
+            <p className="mt-2 break-keep text-center text-[12px] leading-relaxed text-ink-soft">
+              &lsquo;{task.title}&rsquo; 은(는) 되돌릴 수 없어요.
+            </p>
+
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmOpen(false)}
+                className="flex-1 rounded-full border border-line py-2.5 text-[13px] text-ink-soft transition hover:bg-soft"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(task)}
+                disabled={saving}
+                className="flex-1 rounded-full bg-danger py-2.5 text-[13px] font-medium text-white transition hover:bg-danger-deep disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                삭제하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

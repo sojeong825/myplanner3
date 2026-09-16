@@ -118,6 +118,7 @@ const guestStore: Store = {
       id: nextId++,
       title: draft.title,
       due_date: draft.due_date,
+      due_time: draft.due_time,
       is_done: false,
       // 같은 밀리초로 몰리면 정렬이 뒤섞여서 1ms씩 벌려둔다.
       created_at: new Date(now + i).toISOString(),
@@ -323,6 +324,7 @@ export async function migrateLocalToServer(
       user_id: userId,
       title: t.title,
       due_date: t.due_date,
+      due_time: t.due_time,
       is_done: t.is_done,
       icon: t.icon,
       icon_color: t.icon_color,

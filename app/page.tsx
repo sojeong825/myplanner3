@@ -39,6 +39,13 @@ function byDueThenCreated(a: Task, b: Task) {
     if (!b.due_date) return -1;
     return a.due_date < b.due_date ? -1 : 1;
   }
+  // 같은 날이면 시간이 이른 것부터. 시간을 안 정한 건 그날의 맨 뒤로 보낸다 —
+  // '몇 시까지'가 있는 일을 먼저 보는 게 자연스럽다.
+  if (a.due_time !== b.due_time) {
+    if (!a.due_time) return 1;
+    if (!b.due_time) return -1;
+    return a.due_time < b.due_time ? -1 : 1;
+  }
   return a.created_at < b.created_at ? 1 : -1;
 }
 
@@ -54,9 +61,15 @@ function starredFirst(cmp: (a: Task, b: Task) => number) {
   };
 }
 
-/** 지난 일정은 최근에 지난 것부터 본다. */
-const byDueDesc = (a: Task, b: Task) => (a.due_date! < b.due_date! ? 1 : -1);
-const byDueAsc = (a: Task, b: Task) => (a.due_date! < b.due_date! ? -1 : 1);
+/**
+ * 같은 날짜 안에서는 시간까지 본다 — byDueThenCreated와 같은 규칙을 쓴다.
+ * 지난 일정은 최근에 지난 것부터 보므로 날짜만 뒤집는다.
+ */
+const byDueAsc = (a: Task, b: Task) =>
+  a.due_date === b.due_date ? byDueThenCreated(a, b) : a.due_date! < b.due_date! ? -1 : 1;
+
+const byDueDesc = (a: Task, b: Task) =>
+  a.due_date === b.due_date ? byDueThenCreated(a, b) : a.due_date! < b.due_date! ? 1 : -1;
 
 const message = (e: unknown, fallback: string) =>
   e instanceof Error ? e.message : fallback;
@@ -213,8 +226,14 @@ export default function Page() {
       setError(null);
       try {
         if (editingTask) {
+          // 수정 중 날짜를 더 골랐으면, 이 일정은 첫 날짜로 옮기고 나머지 날짜에는
+          // 같은 내용의 일정을 새로 만든다. '수정'과 '추가'를 한 번에 처리하는 곳이다.
           const saved = await store.updateTask(editingTask.id, drafts[0]);
-          setTasks((prev) => prev.map((t) => (t.id === saved.id ? saved : t)));
+          const extra = drafts.length > 1 ? await store.addTasks(drafts.slice(1)) : [];
+          setTasks((prev) => [
+            ...extra,
+            ...prev.map((t) => (t.id === saved.id ? saved : t)),
+          ]);
         } else {
           const saved = await store.addTasks(drafts);
           setTasks((prev) => [...saved, ...prev]);
@@ -237,6 +256,9 @@ export default function Page() {
         await store.removeTask(task.id);
         setTasks((prev) => prev.filter((t) => t.id !== task.id));
         setModalOpen(false);
+        // 보고 있던 id를 비운다. 게스트는 id를 '최댓값 + 1'로 매기므로, 방금 지운
+        // 번호를 다음 일정이 그대로 물려받아 보기 모달이 혼자 열릴 수 있다.
+        setViewingId(null);
       } catch (e) {
         setError(message(e, "삭제하지 못했어요."));
       } finally {
@@ -540,7 +562,9 @@ export default function Page() {
         task={viewingTask}
         categories={categories}
         today={today}
+        saving={saving}
         onClose={() => setViewingId(null)}
+        onDelete={(t) => void deleteTask(t)}
         onEdit={openEdit}
         onToggleStar={toggleStar}
       />

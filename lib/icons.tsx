@@ -9,11 +9,75 @@
  * 다 가지고 있어서 별도 색상 선택은 중복이었고, 그래서 모달에서 색상 항목을 뺐다.
  * (`tasks.icon_color` 컬럼은 지우지 않고 남겨뒀다 — 되돌리기 쉽게.)
  *
- * v1.5에서는 고르는 팔레트도 없앴다. 아이콘은 저장할 때 제목·분류로 자동 결정된다
- * (`lib/autoIcon.ts`). 그래서 이 파일에는 '그리는 법'만 남고 '고를 목록'은 없다.
+ * 아이콘은 기본적으로 저장할 때 제목·분류를 보고 자동으로 정해진다(`lib/autoIcon.ts`).
+ * 다만 자동이 늘 맞을 수는 없어서, 모달에서 직접 고르거나 아무 이모지나 입력할 수도 있다.
+ * 자동은 시작값일 뿐 잠금이 아니다.
  */
 
+/**
+ * 모달에서 고를 수 있는 이모지. 한 줄에 여섯 개씩 떨어진다.
+ *
+ * 이 목록이 전부는 아니다 — 모달에서 직접 입력하면 어떤 이모지든 저장된다.
+ * 여기 있는 건 '자주 쓰는 것을 한 번에 고르는' 지름길이다.
+ */
+export const TASK_EMOJIS: { emoji: string; label: string }[] = [
+  { emoji: "📌", label: "일정" },
+  { emoji: "⭐", label: "별" },
+  { emoji: "❤️", label: "하트" },
+  { emoji: "✅", label: "완료" },
+  { emoji: "❗", label: "중요" },
+  { emoji: "🔥", label: "급함" },
+
+  { emoji: "💼", label: "업무" },
+  { emoji: "📋", label: "서류" },
+  { emoji: "💻", label: "컴퓨터" },
+  { emoji: "📊", label: "보고" },
+  { emoji: "📁", label: "프로젝트" },
+  { emoji: "📝", label: "메모" },
+
+  { emoji: "💬", label: "회의" },
+  { emoji: "🤝", label: "미팅" },
+  { emoji: "📞", label: "전화" },
+  { emoji: "✉️", label: "메일" },
+  { emoji: "💌", label: "편지" },
+  { emoji: "🎉", label: "축하" },
+
+  { emoji: "☕", label: "커피" },
+  { emoji: "🍔", label: "식사" },
+  { emoji: "🎂", label: "생일" },
+  { emoji: "🎁", label: "선물" },
+  { emoji: "🛒", label: "쇼핑" },
+  { emoji: "🏠", label: "집" },
+
+  { emoji: "💪", label: "운동" },
+  { emoji: "🏃", label: "달리기" },
+  { emoji: "🏥", label: "병원" },
+  { emoji: "📚", label: "공부" },
+  { emoji: "✈️", label: "여행" },
+  { emoji: "💰", label: "돈" },
+];
+
 export const DEFAULT_ICON = "📌";
+
+/**
+ * 직접 입력한 글자에서 이모지 하나만 뽑아낸다.
+ *
+ * 붙여넣기로 문장이 통째로 들어오거나 이모지를 여러 개 넣는 일이 잦아서, 맨 앞
+ * 한 글자만 남긴다. Intl.Segmenter를 쓰는 이유는 이모지 하나가 코드 유닛 여러 개로
+ * 이루어져 있어서다 — slice(0,1)로 자르면 👨‍👩‍👧 같은 건 조각나서 깨진다.
+ */
+export function firstGrapheme(raw: string): string | null {
+  const text = raw.trim();
+  if (!text) return null;
+
+  if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
+    const seg = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+    const first = seg.segment(text)[Symbol.iterator]().next();
+    return first.done ? null : first.value.segment;
+  }
+  // Segmenter가 없는 구형 브라우저 — 코드포인트 단위로라도 자른다.
+  return [...text][0] ?? null;
+}
 
 /**
  * v1.3 이전에 저장된 프리셋 이름 → 이모지.
@@ -131,6 +195,47 @@ export function StarButton({
         strokeLinejoin="round"
       >
         <path d={STAR_PATH} />
+      </svg>
+    </button>
+  );
+}
+
+/**
+ * 삭제 버튼. 보기 모달과 수정 모달이 같은 모양을 쓰도록 여기 둔다.
+ *
+ * 색은 테마를 따라가지 않는다(--danger 고정). 민트 테마에서 삭제가 초록이면
+ * 위험 신호로 읽히지 않는다.
+ */
+export function TrashButton({
+  onClick,
+  className = "size-9",
+  iconClassName = "size-5",
+}: {
+  onClick: () => void;
+  className?: string;
+  iconClassName?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="일정 삭제"
+      title="삭제"
+      className={`grid shrink-0 cursor-pointer place-items-center rounded-full text-danger transition hover:bg-danger/10 hover:text-danger-deep ${className}`}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        className={iconClassName}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      >
+        <path
+          d="M4 7h16M9.5 4.5h5M6.5 7l.8 12.2h9.4L17.5 7M10 10.5v6M14 10.5v6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     </button>
   );

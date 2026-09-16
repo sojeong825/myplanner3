@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getDday, type DateKey } from "@/lib/date";
+import { formatTime, getDday, type DateKey } from "@/lib/date";
 import { TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
@@ -190,9 +190,9 @@ export default function TaskSearch({ tasks, today, onSelect }: Props) {
                       </span>
                       <span className="ml-auto shrink-0 text-[11px] text-ink-soft">
                         {task.due_date
-                          ? `${task.due_date.slice(5).replace("-", "/")} · ${
-                              getDday(task.due_date, today).label
-                            }`
+                          ? `${task.due_date.slice(5).replace("-", "/")}${
+                              task.due_time ? " " + formatTime(task.due_time) : ""
+                            } · ${getDday(task.due_date, today).label}`
                           : "마감 없음"}
                       </span>
                     </button>

@@ -5,7 +5,14 @@ import DatePicker from "@/components/DatePicker";
 import { autoIcon } from "@/lib/autoIcon";
 import { categoryName, type Category } from "@/lib/categories";
 import type { DateKey } from "@/lib/date";
-import { StarButton, TaskIcon } from "@/lib/icons";
+import {
+  firstGrapheme,
+  StarButton,
+  TASK_EMOJIS,
+  TaskIcon,
+  toIcon,
+  TrashButton,
+} from "@/lib/icons";
 import type { NewTask, Task } from "@/lib/types";
 
 type Props = {
@@ -43,6 +50,22 @@ export default function TaskModal({
    * 추가할 때는 누른 만큼 쌓이고(날짜 수만큼 할 일이 만들어진다), 수정할 때는 한 개다.
    */
   const [dates, setDates] = useState<DateKey[]>([]);
+  /**
+   * 마감 시간 'HH:MM'. 빈 문자열이면 시간 없음.
+   *
+   * 날짜가 없으면 저장할 때 같이 버린다 — 날짜 없는 시간은 언제인지 알 수 없다.
+   * 날짜를 여러 개 고르면 그 날짜들이 전부 같은 시간을 갖는다.
+   */
+  const [time, setTime] = useState("");
+  /**
+   * 사용자가 고른 이모지. null이면 '자동' — 제목·분류를 따라 실시간으로 바뀐다.
+   *
+   * 자동을 기본으로 두되 잠그지는 않는다. 자동이 늘 맞을 수는 없어서, 고르면
+   * 그때부터 그 값이 그대로 저장되고 '자동으로'를 누르면 다시 자동으로 돌아간다.
+   */
+  const [pickedIcon, setPickedIcon] = useState<string | null>(null);
+  /** 이모지 고르는 칸이 펼쳐져 있는지. 평소에는 접어둬서 모달이 길어지지 않게 한다. */
+  const [iconOpen, setIconOpen] = useState(false);
   /** 공백만 남으면 저장할 때 null로 바꾼다. */
   const [memo, setMemo] = useState("");
   const [categoryId, setCategoryId] = useState<number | null>(null);
@@ -60,6 +83,10 @@ export default function TaskModal({
     // 추가 모드에서는 달력에서 고른 칸이 있으면 그 날짜가 미리 골라진 채로 열린다.
     const start = task?.due_date ?? initialDate;
     setDates(start ? [start] : []);
+    setTime(task?.due_time ?? "");
+    // 수정은 이미 정해진 이모지가 있으므로 그걸 고른 값으로 삼는다. 추가는 자동에서 시작.
+    setPickedIcon(task ? toIcon(task.icon) : null);
+    setIconOpen(false);
     setMemo(task?.memo ?? "");
     setCategoryId(task?.category_id ?? null);
     setStarred(task?.is_starred ?? false);
@@ -83,11 +110,9 @@ export default function TaskModal({
 
   const canSave = title.trim().length > 0 && !saving;
 
-  /**
-   * 저장될 이모지. 고르는 팔레트 없이 제목·분류로 정해지므로(v1.5), 지금 어떤 게
-   * 붙을지 입력칸 앞에 그대로 보여준다. 보여주기만 하고 누를 수는 없다.
-   */
-  const icon = autoIcon(title, categoryName(categories, categoryId));
+  /** 고른 게 있으면 그것, 없으면 제목·분류로 자동 결정된 이모지. */
+  const suggested = autoIcon(title, categoryName(categories, categoryId));
+  const icon = pickedIcon ?? suggested;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,10 +130,11 @@ export default function TaskModal({
     };
 
     // 마감일은 선택 항목 — 하나도 없으면 마감 없는 할 일 한 건으로 저장한다.
+    // 날짜가 없으면 시간도 함께 버린다.
     onSubmit(
       dates.length === 0
-        ? [{ ...base, due_date: null }]
-        : dates.map((due_date) => ({ ...base, due_date })),
+        ? [{ ...base, due_date: null, due_time: null }]
+        : dates.map((due_date) => ({ ...base, due_date, due_time: time || null })),
     );
   };
 
@@ -143,21 +169,7 @@ export default function TaskModal({
           />
 
           {editing && (
-            <button
-              type="button"
-              onClick={() => setConfirmOpen(true)}
-              aria-label="할 일 삭제"
-              title="삭제"
-              className="-mr-1 grid size-8 place-items-center rounded-full text-danger transition hover:bg-danger/10 hover:text-danger-deep"
-            >
-              <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path
-                  d="M4 7h16M9.5 4.5h5M6.5 7l.8 12.2h9.4L17.5 7M10 10.5v6M14 10.5v6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
+            <TrashButton onClick={() => setConfirmOpen(true)} className="-mr-1 size-9" />
           )}
         </div>
 
@@ -170,9 +182,22 @@ export default function TaskModal({
             <span className="text-[12px] text-ink-soft">
               할 일 이름 <span className="text-accent-deep">*</span>
             </span>
-            {/* 앞쪽 이모지는 저장될 아이콘 미리보기다. 입력칸 안에 두어 제목과 함께 읽힌다. */}
-            <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-line bg-canvas px-3 focus-within:border-accent">
-              <TaskIcon icon={icon} className="text-[16px]" />
+            {/*
+              앞쪽 이모지는 저장될 아이콘이자 버튼이다. 누르면 아래 고르는 칸이 펼쳐진다.
+              입력칸 안에 둔 이유는 제목과 함께 읽히기 때문 — 따로 떼어놓으면 이게
+              이 일정의 아이콘이라는 게 덜 분명하다.
+            */}
+            <div className="mt-1.5 flex items-center gap-1 rounded-lg border border-line bg-canvas pr-3 focus-within:border-accent">
+              <button
+                type="button"
+                onClick={() => setIconOpen((v) => !v)}
+                aria-expanded={iconOpen}
+                aria-label="아이콘 바꾸기"
+                title="아이콘 바꾸기"
+                className="my-1 ml-1 grid size-8 shrink-0 place-items-center rounded-md transition hover:bg-soft"
+              >
+                <TaskIcon icon={icon} className="text-[17px]" />
+              </button>
               <input
                 ref={titleRef}
                 value={title}
@@ -182,24 +207,111 @@ export default function TaskModal({
                 className="min-w-0 flex-1 bg-transparent py-2.5 text-[14px] outline-none placeholder:text-ink-faint"
               />
             </div>
-            <p className="px-1 pt-1 text-[11px] text-ink-faint">
-              아이콘은 제목과 분류에 맞춰 자동으로 붙어요
-            </p>
+
+            {!iconOpen && (
+              <p className="px-1 pt-1 text-[11px] text-ink-faint">
+                {pickedIcon === null
+                  ? "아이콘은 제목·분류에 맞춰 자동으로 붙어요. 눌러서 바꿀 수 있어요"
+                  : "아이콘을 직접 골랐어요. 눌러서 다시 바꿀 수 있어요"}
+              </p>
+            )}
           </label>
+
+          {/* 이모지 고르기 — 평소에는 접어둔다. 늘 펼쳐두면 모달이 화면을 넘어간다. */}
+          {iconOpen && (
+            <div className="rounded-xl border border-line bg-canvas p-3">
+              <div className="flex items-center">
+                <span className="text-[12px] text-ink-soft">아이콘</span>
+                {pickedIcon !== null && (
+                  <button
+                    type="button"
+                    // 자동으로 되돌리기. 고른 값을 지우면 제목·분류를 따라 다시 움직인다.
+                    onClick={() => setPickedIcon(null)}
+                    className="ml-auto text-[11px] text-ink-faint underline underline-offset-2 transition hover:text-ink-soft"
+                  >
+                    자동으로 되돌리기
+                  </button>
+                )}
+              </div>
+
+              <div role="radiogroup" aria-label="아이콘" className="mt-2 grid grid-cols-6 gap-1.5">
+                {TASK_EMOJIS.map(({ emoji, label }) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    role="radio"
+                    aria-checked={icon === emoji}
+                    aria-label={label}
+                    title={label}
+                    onClick={() => setPickedIcon(emoji)}
+                    className={`grid aspect-square place-items-center rounded-[10px] border bg-card transition ${
+                      icon === emoji
+                        ? "border-accent-deep ring-2 ring-soft-deep"
+                        : "border-line hover:border-ink-faint"
+                    }`}
+                  >
+                    <TaskIcon icon={emoji} className="text-[17px]" />
+                  </button>
+                ))}
+              </div>
+
+              {/*
+                목록에 없는 이모지도 쓸 수 있어야 한다. 윈도우는 Win + . , 맥은
+                Control + Command + Space 로 이모지 판을 연다.
+              */}
+              <label className="mt-2.5 flex items-center gap-2">
+                <span className="shrink-0 text-[11px] text-ink-soft">직접 넣기</span>
+                <input
+                  value={pickedIcon ?? ""}
+                  onChange={(e) => {
+                    // 문장을 붙여넣거나 여러 개를 넣어도 맨 앞 한 글자만 남긴다.
+                    const first = firstGrapheme(e.target.value);
+                    setPickedIcon(first);
+                  }}
+                  placeholder="🐶"
+                  aria-label="아이콘 직접 입력"
+                  className="emoji w-16 rounded-lg border border-line bg-card px-2 py-1.5 text-center text-[15px] outline-none focus:border-accent"
+                />
+                <span className="text-[11px] leading-snug text-ink-faint">
+                  Win + . 로 이모지 판을 열 수 있어요
+                </span>
+              </label>
+            </div>
+          )}
 
           <div>
             <span className="text-[12px] text-ink-soft">
-              마감일 (선택){!editing && " · 여러 날을 누르면 각각 만들어져요"}
+              마감일 (선택) · 여러 날을 누르면 각각 만들어져요
             </span>
             <div className="mt-1.5">
-              <DatePicker
-                value={dates}
-                today={today}
-                // 수정은 이미 있는 한 건을 고치는 것이라 날짜도 하나만 유지한다.
-                multiple={!editing}
-                onChange={setDates}
-              />
+              {/*
+                수정할 때도 날짜를 더 고를 수 있다. 이 일정은 첫 날짜로 옮겨가고,
+                나머지 날짜에는 같은 내용의 일정이 새로 만들어진다(page.tsx의 submitTask).
+              */}
+              <DatePicker value={dates} today={today} multiple onChange={setDates} />
             </div>
+
+            {/* 시간은 날짜를 고른 뒤에만 의미가 있다. 날짜 없는 시간은 언제인지 알 수 없다. */}
+            {dates.length > 0 && (
+              <label className="mt-2 flex items-center gap-2">
+                <span className="shrink-0 text-[12px] text-ink-soft">시간 (선택)</span>
+                <input
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  className="rounded-lg border border-line bg-canvas px-2.5 py-1.5 text-[13px] outline-none focus:border-accent"
+                />
+                {time && (
+                  <button
+                    type="button"
+                    onClick={() => setTime("")}
+                    className="text-[11px] text-ink-faint underline underline-offset-2 transition hover:text-ink-soft"
+                  >
+                    시간 없애기
+                  </button>
+                )}
+              </label>
+            )}
           </div>
 
           <div>
@@ -257,10 +369,13 @@ export default function TaskModal({
               disabled={!canSave}
               className="flex-1 rounded-full bg-accent py-2.5 text-[13px] font-medium text-white transition hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-40"
             >
+              {/* 수정에서 날짜를 더 고르면 이 일정 말고 나머지가 새로 만들어진다. */}
               {saving
                 ? "저장 중…"
-                : !editing && dates.length > 1
-                  ? `${dates.length}개 저장`
+                : dates.length > 1
+                  ? editing
+                    ? `저장 + ${dates.length - 1}개 추가`
+                    : `${dates.length}개 저장`
                   : "저장"}
             </button>
           </div>

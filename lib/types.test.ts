@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { coerceTask, coerceTasks } from "@/lib/types";
+import { coerceTask, coerceTasks, coerceTime } from "@/lib/types";
 
 /** v1.3 이전에 게스트 localStorage에 저장돼 있던 모양 — 새 필드가 아예 없다. */
 const legacy = {
@@ -52,5 +52,43 @@ describe("coerceTasks", () => {
   it("배열이 아니면 빈 배열", () => {
     expect(coerceTasks(null)).toEqual([]);
     expect(coerceTasks({ nope: true })).toEqual([]);
+  });
+});
+
+describe("coerceTime", () => {
+  it("'HH:MM'을 그대로 받는다", () => {
+    expect(coerceTime("09:30")).toBe("09:30");
+    expect(coerceTime("23:59")).toBe("23:59");
+    expect(coerceTime("00:00")).toBe("00:00");
+  });
+
+  it("Postgres가 주는 'HH:MM:SS'는 분까지만 남긴다", () => {
+    // time 컬럼은 초까지 붙여 돌려준다. 화면은 분 단위만 쓰므로 여기서 잘라둔다.
+    expect(coerceTime("14:05:00")).toBe("14:05");
+  });
+
+  it("시각이 아닌 값은 시간 없음", () => {
+    expect(coerceTime("24:00")).toBeNull();
+    expect(coerceTime("9:30")).toBeNull();
+    expect(coerceTime("12:60")).toBeNull();
+    expect(coerceTime("")).toBeNull();
+    expect(coerceTime(null)).toBeNull();
+    expect(coerceTime(930)).toBeNull();
+  });
+});
+
+describe("coerceTask - 시간", () => {
+  it("날짜가 없으면 시간도 버린다", () => {
+    // 날짜 없는 시간은 언제인지 알 수 없다. DB에도 같은 제약이 걸려 있다.
+    const t = coerceTask({ ...legacy, due_date: null, due_time: "09:00" })!;
+    expect(t.due_time).toBeNull();
+  });
+
+  it("날짜가 있으면 시간을 남긴다", () => {
+    expect(coerceTask({ ...legacy, due_time: "09:00:00" })!.due_time).toBe("09:00");
+  });
+
+  it("예전 데이터는 시간 없음으로 읽힌다", () => {
+    expect(coerceTask(legacy)!.due_time).toBeNull();
   });
 });

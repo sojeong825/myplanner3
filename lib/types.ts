@@ -3,6 +3,11 @@ export type Task = {
   title: string;
   /** 'YYYY-MM-DD' 또는 마감 없음 */
   due_date: string | null;
+  /**
+   * 'HH:MM' 또는 시간 없음. 마감일이 없으면 이것도 반드시 null이다 —
+   * 날짜 없는 시간은 언제인지 알 수 없다.
+   */
+  due_time: string | null;
   is_done: boolean;
   created_at: string;
   /**
@@ -26,6 +31,7 @@ export type Task = {
 export type NewTask = {
   title: string;
   due_date: string | null;
+  due_time: string | null;
   /** 저장 직전에 autoIcon이 계산해 넣는다. */
   icon: string;
   /** 새로 저장하는 행은 항상 null이다. 컬럼만 남겨둔 상태(v1.4). */
@@ -37,7 +43,7 @@ export type NewTask = {
 
 /** select에서 쓰는 컬럼 목록 — 한 곳에서만 관리한다. */
 export const TASK_COLUMNS =
-  "id, title, due_date, is_done, created_at, icon, icon_color, memo, category_id, is_starred";
+  "id, title, due_date, due_time, is_done, created_at, icon, icon_color, memo, category_id, is_starred";
 
 /**
  * 어디서 읽었든 Task를 같은 모양으로 맞춘다.
@@ -55,10 +61,14 @@ export function coerceTask(raw: unknown): Task | null {
 
   if (typeof v.id !== "number" || typeof v.title !== "string") return null;
 
+  const due_date = typeof v.due_date === "string" ? v.due_date : null;
+
   return {
     id: v.id,
     title: v.title,
-    due_date: typeof v.due_date === "string" ? v.due_date : null,
+    due_date,
+    // 날짜가 없으면 시간도 버린다. Postgres time은 'HH:MM:SS'로 오므로 분까지만 남긴다.
+    due_time: due_date === null ? null : coerceTime(v.due_time),
     is_done: v.is_done === true,
     created_at:
       typeof v.created_at === "string" ? v.created_at : new Date(0).toISOString(),
@@ -68,6 +78,13 @@ export function coerceTask(raw: unknown): Task | null {
     category_id: typeof v.category_id === "number" ? v.category_id : null,
     is_starred: v.is_starred === true,
   };
+}
+
+/** 'HH:MM' 또는 'HH:MM:SS'만 받아 'HH:MM'으로 맞춘다. 그 밖의 값은 시간 없음. */
+export function coerceTime(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const m = /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/.exec(raw.trim());
+  return m ? `${m[1]}:${m[2]}` : null;
 }
 
 export function coerceTasks(raw: unknown): Task[] {

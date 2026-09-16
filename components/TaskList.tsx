@@ -1,5 +1,6 @@
 "use client";
 
+import { formatTime } from "@/lib/date";
 import { StarButton, TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
@@ -78,6 +79,7 @@ function Row({
             }`}
           >
             {task.due_date.slice(5).replace("-", "/")}
+            {task.due_time && ` ${formatTime(task.due_time)}`}
           </span>
         )}
       </button>

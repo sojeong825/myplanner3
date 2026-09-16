@@ -1,6 +1,6 @@
 "use client";
 
-import { buildWeek, WEEKDAYS, type DateKey } from "@/lib/date";
+import { buildWeek, formatTime, WEEKDAYS, type DateKey } from "@/lib/date";
 import { TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
@@ -98,12 +98,17 @@ export default function WeekGrid({
                   {/* 여러 줄로 넘어가도 첫 줄에 맞춰 정렬 */}
                   <TaskIcon icon={task.icon} done={task.is_done} className="mt-px text-[11px]" />
                   {/* 형광펜은 box-decoration-break: clone이라 줄이 넘어가도 줄마다 그어진다. */}
-                  <span
-                    className={`line-clamp-3 ${
-                      task.is_starred && !task.is_done ? "marker" : ""
-                    }`}
-                  >
-                    {task.title}
+                  <span className="min-w-0">
+                    {task.due_time && !task.is_done && (
+                      <span className="block text-ink-soft">{formatTime(task.due_time)}</span>
+                    )}
+                    <span
+                      className={`line-clamp-3 ${
+                        task.is_starred && !task.is_done ? "marker" : ""
+                      }`}
+                    >
+                      {task.title}
+                    </span>
                   </span>
                 </button>
               ))}

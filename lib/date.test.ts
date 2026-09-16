@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diffDays, getDday } from "@/lib/date";
+import { diffDays, formatTime, getDday } from "@/lib/date";
 
 const TODAY = "2026-09-13";
 
@@ -28,5 +28,22 @@ describe("getDday", () => {
     expect(diffDays("2026-10-01", "2026-09-30")).toBe(1);
     // 2028은 윤년이라 2월이 29일이다.
     expect(diffDays("2028-03-01", "2028-02-28")).toBe(2);
+  });
+});
+
+describe("formatTime", () => {
+  it("오전·오후를 나눠 12시간제로 만든다", () => {
+    expect(formatTime("09:30")).toBe("오전 9:30");
+    expect(formatTime("15:00")).toBe("오후 3:00");
+  });
+
+  it("자정과 정오가 12시로 나온다", () => {
+    // 0시를 '오전 0시'로 두면 12시간제가 아니다.
+    expect(formatTime("00:00")).toBe("오전 12:00");
+    expect(formatTime("12:00")).toBe("오후 12:00");
+  });
+
+  it("분은 두 자리를 유지한다", () => {
+    expect(formatTime("13:05")).toBe("오후 1:05");
   });
 });

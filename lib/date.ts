@@ -133,3 +133,18 @@ export function formatWeekTitle(anchor: DateKey) {
     : `${start.y}년 ${start.m}월 ${start.d}일 – ${end.m}월 ${end.d}일`;
 }
 
+
+/**
+ * 'HH:MM' → '오후 3:00'.
+ *
+ * Intl이나 toLocaleTimeString을 쓰지 않는다. 그쪽은 브라우저·OS 로캘을 타서 같은
+ * 값이 기기마다 다르게 보이고, 하루가 밀릴 수 있는 Date 왕복도 필요하다.
+ * 시간은 어차피 'HH:MM' 문자열이므로 여기서 직접 만든다.
+ */
+export function formatTime(hhmm: string): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const half = h < 12 ? "오전" : "오후";
+  // 0시는 12시로, 13시 이후는 12를 빼서 12시간제로 만든다.
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${half} ${hour12}:${pad(m)}`;
+}

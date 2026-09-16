@@ -1,6 +1,6 @@
 "use client";
 
-import { buildMonthGrid, WEEKDAYS, type DateKey } from "@/lib/date";
+import { buildMonthGrid, formatTime, WEEKDAYS, type DateKey } from "@/lib/date";
 import { TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
@@ -109,6 +109,10 @@ export default function MonthGrid({
                     }`}
                   >
                     <TaskIcon icon={task.icon} done={task.is_done} className="text-[11px]" />
+                    {/* 시간은 제목보다 앞에 둔다. 달력에서는 '몇 시에'가 먼저 읽혀야 한다. */}
+                    {task.due_time && !task.is_done && (
+                      <span className="shrink-0 text-ink-soft">{formatTime(task.due_time)}</span>
+                    )}
                     {/* 특별 일정은 제목에 형광펜을 긋는다. 완료된 건 이미 흐려서 긋지 않는다. */}
                     <span
                       className={`truncate ${

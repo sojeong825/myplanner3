@@ -1,5 +1,5 @@
 -- ============================================================
---  my planner 업데이트 SQL  (0005 + 0006 + 0007 한 번에)
+--  my planner 업데이트 SQL  (0005 ~ 0009 한 번에)
 --
 --  ▶ 이 파일 전체를 복사해서 Supabase SQL Editor에 붙여넣고 Run 하세요.
 --
@@ -229,7 +229,27 @@ alter table public.settings
 
 
 -- ============================================================
---  8. 확인 — 아래 표가 전부 ✅ 면 성공입니다
+--  8. 마감 시간 (v1.7)
+--
+--  날짜만으로는 '몇 시에'를 담을 수 없어서 time 칸을 하나 더한다.
+--  기존 일정은 전부 '시간 없음'으로 남는다.
+-- ============================================================
+
+alter table public.tasks add column if not exists due_time time;
+
+comment on column public.tasks.due_time is
+  '마감 시간(선택). null이면 시간 없음. due_date가 null이면 이것도 null이어야 한다.';
+
+-- 날짜 없는 시간은 언제인지 알 수 없다.
+alter table public.tasks drop constraint if exists tasks_due_time_needs_date_check;
+
+alter table public.tasks
+  add constraint tasks_due_time_needs_date_check
+  check (due_time is null or due_date is not null);
+
+
+-- ============================================================
+--  9. 확인 — 아래 표가 전부 ✅ 면 성공입니다
 -- ============================================================
 
 with check_list(순서, 항목, 통과) as (
@@ -256,6 +276,10 @@ with check_list(순서, 항목, 통과) as (
   select 6, '옛 settings.filter_area 칸이 사라졌다', not exists (
     select 1 from information_schema.columns
     where table_schema = 'public' and table_name = 'settings' and column_name = 'filter_area')
+  union all
+  select 8, 'tasks.due_time 칸이 생겼다', exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'tasks' and column_name = 'due_time')
   union all
   select 7, '사진 위치 칸 4개가 생겼다', (
     select count(*) = 4 from information_schema.columns
