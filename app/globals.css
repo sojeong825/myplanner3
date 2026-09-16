@@ -60,11 +60,11 @@
 
 @font-face {
   font-family: "GMarketSans";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff") format("woff");
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansLight.woff") format("woff");
   font-weight: normal;
   font-display: swap;
   /* 조선굴림체 기준으로 맞춘 배율. lib/fonts.ts 주석 참고. */
-  size-adjust: 106%;
+  size-adjust: 108%;
 }
 
 @font-face {
