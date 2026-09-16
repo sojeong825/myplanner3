@@ -6,17 +6,17 @@
 import type { CategoryFilter } from "@/lib/categories";
 
 export const THEMES = [
-  { id: "pink", label: "핑크", swatch: "#e5aab0" },
-  { id: "lavender", label: "라벤더", swatch: "#ada0d9" },
-  { id: "mint", label: "민트", swatch: "#7cc4ab" },
-  { id: "cream", label: "크림", swatch: "#ddb673" },
-  { id: "gray", label: "그레이", swatch: "#9797a4" },
-  // v1.3 추가. 새 테마를 넣을 때는 globals.css 블록, 아래 배열, settings_theme_check
-  // 제약, lib/icons.tsx의 색 거리표 — 네 곳을 함께 고쳐야 한다.
-  { id: "blue", label: "블루", swatch: "#8fb8de" },
-  { id: "sage", label: "세이지", swatch: "#9bb894" },
-  { id: "coral", label: "코랄", swatch: "#e39b89" },
-  { id: "mocha", label: "모카", swatch: "#a98c7d" },
+  { id: "pink", label: "핑크", swatch: "#ecb9be" },
+  { id: "lavender", label: "라벤더", swatch: "#bfb4e6" },
+  { id: "mint", label: "민트", swatch: "#9ad6c0" },
+  { id: "cream", label: "크림", swatch: "#e8cb92" },
+  { id: "gray", label: "그레이", swatch: "#b9b9c4" },
+  // 새 테마를 넣을 때 고칠 곳은 셋이다 — globals.css 블록, 이 배열, 그리고
+  // settings_theme_check 제약. swatch는 그 테마의 --accent와 같은 값이어야 한다.
+  { id: "blue", label: "블루", swatch: "#a5c9e9" },
+  { id: "sage", label: "세이지", swatch: "#b3cbac" },
+  { id: "coral", label: "코랄", swatch: "#f0b3a3" },
+  { id: "mocha", label: "모카", swatch: "#c4aa9b" },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];

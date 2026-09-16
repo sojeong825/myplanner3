@@ -19,6 +19,7 @@ import {
   type CategoryFilter,
 } from "@/lib/categories";
 import { addDays, addMonthsKey, diffDays, todayKey, type DateKey } from "@/lib/date";
+import type { Reflection } from "@/lib/reflections";
 import type { CalendarView, ThemeId } from "@/lib/settings";
 import {
   clearLocalData,
@@ -89,6 +90,7 @@ export default function Page() {
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [reflections, setReflections] = useState<Reflection[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -124,13 +126,15 @@ export default function Page() {
   const reload = useCallback(async () => {
     setLoading(true);
     try {
-      // 분류는 할 일을 그릴 때 이름이 필요하므로 함께 받는다.
-      const [nextTasks, nextCategories] = await Promise.all([
+      // 분류는 할 일을 그릴 때 이름이 필요하므로 함께 받는다. 회고는 보기 모달에서 쓴다.
+      const [nextTasks, nextCategories, nextReflections] = await Promise.all([
         store.listTasks(),
         store.listCategories(),
+        store.listReflections(),
       ]);
       setTasks(nextTasks);
       setCategories(nextCategories);
+      setReflections(nextReflections);
       setError(null);
     } catch (e) {
       setError(message(e, "할 일을 불러오지 못했어요."));
@@ -155,11 +159,13 @@ export default function Page() {
     (async () => {
       setLoading(true);
       try {
-        const [serverTasks, serverCategories] = await Promise.all([
+        const [serverTasks, serverCategories, serverReflections] = await Promise.all([
           store.listTasks(),
           store.listCategories(),
+          store.listReflections(),
         ]);
         setCategories(serverCategories);
+        setReflections(serverReflections);
         const localCount = localTaskCount();
 
         if (localCount === 0) {
@@ -292,6 +298,29 @@ export default function Page() {
           prev.map((t) => (t.id === task.id ? { ...t, is_done: !next } : t)),
         );
         setError(message(e, "완료 상태를 바꾸지 못했어요."));
+      }
+    },
+    [store],
+  );
+
+  /**
+   * 회고 저장. 내용이 비면 그 날짜의 회고를 지운다.
+   *
+   * 저장이 끝난 뒤에 화면을 바꾼다(할 일의 낙관적 갱신과 반대다). 회고는 타이핑이
+   * 끝나고 한 번 누르는 것이라 기다림이 짧고, 대신 '저장됨'이 정확해야 한다.
+   */
+  const saveReflection = useCallback(
+    async (date: DateKey, content: string) => {
+      setError(null);
+      try {
+        await store.saveReflection(date, content);
+        setReflections((prev) => {
+          const rest = prev.filter((r) => r.date !== date);
+          if (!content.trim()) return rest;
+          return [{ date, content }, ...rest].sort((a, b) => (a.date < b.date ? 1 : -1));
+        });
+      } catch (e) {
+        setError(message(e, "회고를 저장하지 못했어요."));
       }
     },
     [store],
@@ -574,7 +603,9 @@ export default function Page() {
       <TaskDetail
         task={viewingTask}
         categories={categories}
+        reflections={reflections}
         today={today}
+        onSaveReflection={saveReflection}
         saving={saving}
         onClose={() => setViewingId(null)}
         onDelete={(t) => void deleteTask(t)}

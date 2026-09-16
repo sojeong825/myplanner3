@@ -23,176 +23,174 @@
  */
 :root,
 :root[data-theme="pink"] {
-  --bg-gradient: linear-gradient(180deg, #faeff2 0%, #ffffff 45%, #fbf4ef 100%);
-  --canvas: #f7f4f4;
+  --bg-gradient: linear-gradient(180deg, #fbf1f3 0%, #ffffff 45%, #fdf6f2 100%);
+  --canvas: #f9f5f5;
   --card: #ffffff;
-  --line: #f1e7e7;
-  --line-soft: #f7f0f0;
+  --line: #f3e9ea;
+  --line-soft: #f9f2f2;
 
-  --ink: #5c4a47;
-  --ink-mid: #82706c;
-  --ink-soft: #a08e8a;
-  --ink-faint: #cbbcb8;
+  --ink: #61504d;
+  --ink-mid: #867571;
+  --ink-soft: #a5938f;
+  --ink-faint: #cfc1bd;
 
-  --soft: #f9ecec;
-  --soft-deep: #f4e0e1;
+  --soft: #fbf0f1;
+  --soft-deep: #f6e3e5;
 
-  --accent: #e5aab0;
-  --accent-deep: #d18b93;
+  --accent: #ecb9be;
+  --accent-deep: #d8989f;
 }
 
 :root[data-theme="lavender"] {
-  --bg-gradient: linear-gradient(180deg, #f4f1fb 0%, #ffffff 45%, #fdf3f6 100%);
-  --canvas: #f6f4f9;
+  --bg-gradient: linear-gradient(180deg, #f5f2fc 0%, #ffffff 45%, #fdf5f8 100%);
+  --canvas: #f7f5fa;
   --card: #ffffff;
-  --line: #eae5f1;
-  --line-soft: #f2eef8;
+  --line: #ece8f3;
+  --line-soft: #f4f1f9;
 
-  --ink: #514a5f;
-  --ink-mid: #736a83;
-  --ink-soft: #948ba5;
-  --ink-faint: #c0b8ce;
+  --ink: #564f63;
+  --ink-mid: #786f87;
+  --ink-soft: #9890a8;
+  --ink-faint: #c5bdd2;
 
-  --soft: #efeaf7;
-  --soft-deep: #e2daef;
+  --soft: #f2eefa;
+  --soft-deep: #e6dff4;
 
-  --accent: #ada0d9;
-  --accent-deep: #8f82c5;
+  --accent: #bfb4e6;
+  --accent-deep: #a294d4;
 }
 
 :root[data-theme="mint"] {
-  --bg-gradient: linear-gradient(180deg, #eef7f2 0%, #ffffff 45%, #f0f6fb 100%);
-  --canvas: #f1f7f4;
+  --bg-gradient: linear-gradient(180deg, #f0f8f4 0%, #ffffff 45%, #f2f8fc 100%);
+  --canvas: #f3f9f6;
   --card: #ffffff;
-  --line: #e0eee8;
-  --line-soft: #edf6f2;
+  --line: #e4f0eb;
+  --line-soft: #eff7f3;
 
-  --ink: #3f564d;
-  --ink-mid: #5e7a70;
-  --ink-soft: #849f95;
-  --ink-faint: #b1c7bf;
+  --ink: #445b52;
+  --ink-mid: #627f74;
+  --ink-soft: #87a399;
+  --ink-faint: #b5cbc3;
 
-  --soft: #e5f2ec;
-  --soft-deep: #d3e9e0;
+  --soft: #e9f5f0;
+  --soft-deep: #d8ebe4;
 
-  --accent: #7cc4ab;
-  --accent-deep: #58a88d;
+  --accent: #9ad6c0;
+  --accent-deep: #74bda3;
 }
 
 :root[data-theme="cream"] {
-  --bg-gradient: linear-gradient(180deg, #fbf6ea 0%, #ffffff 45%, #faf1ef 100%);
-  --canvas: #faf6ee;
+  --bg-gradient: linear-gradient(180deg, #fcf8ee 0%, #ffffff 45%, #fdf4f2 100%);
+  --canvas: #fbf8f1;
   --card: #ffffff;
-  --line: #f0e6d6;
-  --line-soft: #f7f0e5;
+  --line: #f3e9da;
+  --line-soft: #f9f3e9;
 
-  --ink: #5a4e3b;
-  --ink-mid: #7c6e57;
-  --ink-soft: #a29379;
-  --ink-faint: #c9bea7;
+  --ink: #5e5240;
+  --ink-mid: #80725b;
+  --ink-soft: #a5977d;
+  --ink-faint: #cdc2ab;
 
-  --soft: #f7eede;
-  --soft-deep: #eee1ca;
+  --soft: #faf2e4;
+  --soft-deep: #f2e5cd;
 
-  --accent: #ddb673;
-  --accent-deep: #c39a54;
+  --accent: #e8cb92;
+  --accent-deep: #d1ae6c;
 }
 
 :root[data-theme="gray"] {
-  --bg-gradient: linear-gradient(180deg, #f2f3f6 0%, #ffffff 45%, #f5f3f1 100%);
-  --canvas: #f5f5f7;
+  --bg-gradient: linear-gradient(180deg, #f5f6f9 0%, #ffffff 45%, #f8f6f5 100%);
+  --canvas: #f7f7f9;
   --card: #ffffff;
-  --line: #e7e7ea;
-  --line-soft: #f0f0f3;
+  --line: #eaeaee;
+  --line-soft: #f3f3f6;
 
-  --ink: #494950;
-  --ink-mid: #6a6a73;
-  --ink-soft: #8f8f9a;
-  --ink-faint: #bbbbc4;
+  --ink: #4e4e55;
+  --ink-mid: #6e6e78;
+  --ink-soft: #94949e;
+  --ink-faint: #c0c0c8;
 
-  --soft: #eeeef2;
-  --soft-deep: #dfdfe6;
+  --soft: #f1f1f5;
+  --soft-deep: #e4e4ea;
 
-  --accent: #9797a4;
-  --accent-deep: #7a7a88;
+  --accent: #b9b9c4;
+  --accent-deep: #9a9aa6;
 }
 
-/* ── v1.3 추가 4종. 위 다섯 개와 같은 구조를 그대로 따른다. ── */
-
 :root[data-theme="blue"] {
-  --bg-gradient: linear-gradient(180deg, #eef3fa 0%, #ffffff 45%, #f2f6fb 100%);
-  --canvas: #f3f6fa;
+  --bg-gradient: linear-gradient(180deg, #f1f6fc 0%, #ffffff 45%, #f5f8fc 100%);
+  --canvas: #f5f8fb;
   --card: #ffffff;
-  --line: #e3ebf3;
-  --line-soft: #eff4f9;
+  --line: #e7eff7;
+  --line-soft: #f1f6fb;
 
-  --ink: #41505f;
-  --ink-mid: #5f7180;
-  --ink-soft: #8698a8;
-  --ink-faint: #b6c4d1;
+  --ink: #465463;
+  --ink-mid: #637585;
+  --ink-soft: #8a9cac;
+  --ink-faint: #bac7d4;
 
-  --soft: #e9f1f9;
-  --soft-deep: #d8e6f2;
+  --soft: #edf4fb;
+  --soft-deep: #dde9f5;
 
-  --accent: #8fb8de;
-  --accent-deep: #6a99c6;
+  --accent: #a5c9e9;
+  --accent-deep: #82afd8;
 }
 
 :root[data-theme="sage"] {
-  --bg-gradient: linear-gradient(180deg, #f0f5ee 0%, #ffffff 45%, #f5f5ee 100%);
-  --canvas: #f4f7f2;
+  --bg-gradient: linear-gradient(180deg, #f3f8f1 0%, #ffffff 45%, #f7f8f1 100%);
+  --canvas: #f6f9f5;
   --card: #ffffff;
-  --line: #e6eee2;
-  --line-soft: #f0f5ed;
+  --line: #e9f1e6;
+  --line-soft: #f2f7f0;
 
-  --ink: #47513f;
-  --ink-mid: #67725d;
-  --ink-soft: #8d9884;
-  --ink-faint: #bcc6b3;
+  --ink: #4b5544;
+  --ink-mid: #6b7661;
+  --ink-soft: #919c88;
+  --ink-faint: #c0cab7;
 
-  --soft: #ecf3e9;
-  --soft-deep: #dde9d8;
+  --soft: #eff5ec;
+  --soft-deep: #e1ecdd;
 
-  --accent: #9bb894;
-  --accent-deep: #7a9c72;
+  --accent: #b3cbac;
+  --accent-deep: #92b08a;
 }
 
 :root[data-theme="coral"] {
-  --bg-gradient: linear-gradient(180deg, #fdf0ec 0%, #ffffff 45%, #fdf3ec 100%);
-  --canvas: #fbf5f2;
+  --bg-gradient: linear-gradient(180deg, #fdf3ef 0%, #ffffff 45%, #fdf5ef 100%);
+  --canvas: #fcf7f4;
   --card: #ffffff;
-  --line: #f5e5df;
-  --line-soft: #faefea;
+  --line: #f7e9e3;
+  --line-soft: #fbf1ed;
 
-  --ink: #5f4740;
-  --ink-mid: #826860;
-  --ink-soft: #a98d84;
-  --ink-faint: #d2bdb5;
+  --ink: #634b44;
+  --ink-mid: #866c64;
+  --ink-soft: #ad9188;
+  --ink-faint: #d6c1b9;
 
-  --soft: #fbeae4;
-  --soft-deep: #f6d9d0;
+  --soft: #fdeee9;
+  --soft-deep: #f9ded6;
 
-  --accent: #e39b89;
-  --accent-deep: #c9765f;
+  --accent: #f0b3a3;
+  --accent-deep: #dd9080;
 }
 
 :root[data-theme="mocha"] {
-  --bg-gradient: linear-gradient(180deg, #f7f1ec 0%, #ffffff 45%, #f6f2ed 100%);
-  --canvas: #f7f3ef;
+  --bg-gradient: linear-gradient(180deg, #f8f3ef 0%, #ffffff 45%, #f8f4ef 100%);
+  --canvas: #f9f5f1;
   --card: #ffffff;
-  --line: #ece2da;
-  --line-soft: #f4ede7;
+  --line: #eee5dd;
+  --line-soft: #f6efe9;
 
-  --ink: #52453d;
-  --ink-mid: #72645b;
-  --ink-soft: #9a8b81;
-  --ink-faint: #c7b9af;
+  --ink: #564941;
+  --ink-mid: #76685f;
+  --ink-soft: #9e8f85;
+  --ink-faint: #cbbdb3;
 
-  --soft: #f2e9e2;
-  --soft-deep: #e6d8cd;
+  --soft: #f5ece5;
+  --soft-deep: #ebdcd1;
 
-  --accent: #a98c7d;
-  --accent-deep: #8a6c5d;
+  --accent: #c4aa9b;
+  --accent-deep: #a78b7b;
 }
 
 /*
@@ -288,7 +286,7 @@ body {
 .marker {
   background-image: linear-gradient(
     to top,
-    color-mix(in srgb, var(--accent) 45%, transparent) 62%,
+    color-mix(in srgb, var(--accent) 62%, transparent) 62%,
     transparent 62%
   );
   /* 줄이 넘어가도 줄마다 다시 그린다. 없으면 첫 줄에만 칠해진다(주간 뷰가 여러 줄). */

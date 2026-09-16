@@ -10,10 +10,10 @@ type Props = {
 export default function ThemePicker({ value, onChange }: Props) {
   return (
     <div>
-      <p className="px-1 pb-2 text-[11px] text-ink-soft">테마</p>
       {/*
-        사이드바 안쪽 폭이 164px이라 20px 스와치는 한 줄에 다섯 개까지만 들어간다.
-        justify-between으로 늘려두면 테마를 더할 때마다 조용히 삐져나가므로 wrap으로 둔다.
+        설정 모달 안에 들어가므로 제목은 모달이 붙인다 — 여기서 또 붙이면 "테마"가 두 번 나온다.
+        스와치는 wrap으로 둔다. 한 줄에 몇 개가 들어가는지는 모달 폭에 달렸고,
+        테마를 더할 때마다 조용히 삐져나가는 일이 없어야 한다.
       */}
       <div role="radiogroup" aria-label="테마" className="flex flex-wrap items-center gap-2.5 px-1">
         {THEMES.map((theme) => {
