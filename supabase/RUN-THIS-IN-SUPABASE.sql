@@ -316,8 +316,9 @@ update public.settings set font = 'joseon' where font = 'isamanru';
 alter table public.settings
   add constraint settings_font_check
   check (font in ('joseon', 'pretendard', 'nanumgothic', 'nanumround',
-                  'chosunmyungjo', 'ridibatang',
-                  'parkdahyun', 'konkon', 'fromsol', 'mona12'));
+                  'kopub', 'gmarket', 'cafe24air', 'chosunmyungjo', 'ridibatang',
+                  'parkdahyun', 'konkon', 'positive', 'kyobo2025',
+                  'hakgyo', 'fromsol', 'mona12'));
 
 
 -- ============================================================

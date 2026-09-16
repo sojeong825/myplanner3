@@ -16,7 +16,7 @@ const styleOf = (family: string) => ({
 /**
  * 글꼴 고르기.
  *
- * 열 개를 죽 펼쳐두면 설정 모달의 절반을 글꼴 목록이 차지한다. 자주 바꾸는 값도
+ * 열여섯 개를 죽 펼쳐두면 설정 모달을 글꼴 목록이 통째로 차지한다. 자주 바꾸는 값도
  * 아니라서 접어두고, 누를 때만 펼친다.
  *
  * **글꼴 이름을 그 글꼴로 그린다.** 이름만 나열하면 '리디바탕'이 어떻게 생겼는지
@@ -64,7 +64,6 @@ export default function FontPicker({ value, onChange }: Props) {
           <span style={styleOf(current.family)} className="text-[15px] text-ink">
             {current.label}
           </span>
-          <span className="ml-auto shrink-0 text-[11px] text-ink-faint">{current.note}</span>
           <svg
             viewBox="0 0 24 24"
             aria-hidden="true"
@@ -106,7 +105,6 @@ export default function FontPicker({ value, onChange }: Props) {
                   >
                     {font.label}
                   </span>
-                  <span className="ml-auto shrink-0 text-[11px] text-ink-faint">{font.note}</span>
                 </button>
               );
             })}
