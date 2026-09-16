@@ -7,6 +7,7 @@ import Calendar from "@/components/Calendar";
 import CounterCard from "@/components/CounterCard";
 import MergePrompt from "@/components/MergePrompt";
 import ScheduleCard from "@/components/ScheduleCard";
+import SettingsModal from "@/components/SettingsModal";
 import Sidebar from "@/components/Sidebar";
 import TaskDetail from "@/components/TaskDetail";
 import TaskList from "@/components/TaskList";
@@ -18,7 +19,6 @@ import {
   type CategoryFilter,
 } from "@/lib/categories";
 import { addDays, addMonthsKey, diffDays, todayKey, type DateKey } from "@/lib/date";
-import type { Reflection } from "@/lib/reflections";
 import type { CalendarView, ThemeId } from "@/lib/settings";
 import {
   clearLocalData,
@@ -82,13 +82,13 @@ export default function Page() {
   /** 달력이 보고 있는 기준 날짜. 월간이면 이 날짜의 달, 주간이면 이 날짜가 속한 주. */
   const [anchor, setAnchor] = useState<DateKey | null>(null);
 
-  const { session, ready, userId, email, signIn, signUp, signOut } = useAuth();
+  const { session, ready, userId, email, signIn, signUp, signOut, changePassword } =
+    useAuth();
   const store = useMemo(() => createStore(userId), [userId]);
   const { settings, setSettings, update } = useSettings(store, ready);
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [reflections, setReflections] = useState<Reflection[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +108,7 @@ export default function Page() {
   /** 달력에서 고른 날짜 칸. '+ 일정 추가'가 이 날짜로 채워진다. */
   const [selectedDate, setSelectedDate] = useState<DateKey | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   /** 로그인했는데 서버에도 로컬에도 데이터가 있어 합칠지 물어야 하는 상태 */
   const [mergeCount, setMergeCount] = useState<number | null>(null);
 
@@ -123,15 +124,13 @@ export default function Page() {
   const reload = useCallback(async () => {
     setLoading(true);
     try {
-      // 분류는 할 일을 그릴 때 이름이 필요하므로 함께 받는다. 회고도 같은 카드에 있다.
-      const [nextTasks, nextCategories, nextReflections] = await Promise.all([
+      // 분류는 할 일을 그릴 때 이름이 필요하므로 함께 받는다.
+      const [nextTasks, nextCategories] = await Promise.all([
         store.listTasks(),
         store.listCategories(),
-        store.listReflections(),
       ]);
       setTasks(nextTasks);
       setCategories(nextCategories);
-      setReflections(nextReflections);
       setError(null);
     } catch (e) {
       setError(message(e, "할 일을 불러오지 못했어요."));
@@ -156,13 +155,11 @@ export default function Page() {
     (async () => {
       setLoading(true);
       try {
-        const [serverTasks, serverCategories, serverReflections] = await Promise.all([
+        const [serverTasks, serverCategories] = await Promise.all([
           store.listTasks(),
           store.listCategories(),
-          store.listReflections(),
         ]);
         setCategories(serverCategories);
-        setReflections(serverReflections);
         const localCount = localTaskCount();
 
         if (localCount === 0) {
@@ -295,29 +292,6 @@ export default function Page() {
           prev.map((t) => (t.id === task.id ? { ...t, is_done: !next } : t)),
         );
         setError(message(e, "완료 상태를 바꾸지 못했어요."));
-      }
-    },
-    [store],
-  );
-
-  /**
-   * 회고 저장. 내용이 비면 그 날짜의 회고를 지운다.
-   *
-   * 저장이 끝난 뒤에 화면을 바꾼다(할 일의 낙관적 갱신과 반대다). 회고는 타이핑이
-   * 끝나고 한 번 누르는 것이라 기다림이 짧고, 대신 '저장됨'이 정확해야 한다.
-   */
-  const saveReflection = useCallback(
-    async (date: DateKey, content: string) => {
-      setError(null);
-      try {
-        await store.saveReflection(date, content);
-        setReflections((prev) => {
-          const rest = prev.filter((r) => r.date !== date);
-          if (!content.trim()) return rest;
-          return [{ date, content }, ...rest].sort((a, b) => (a.date < b.date ? 1 : -1));
-        });
-      } catch (e) {
-        setError(message(e, "회고를 저장하지 못했어요."));
       }
     },
     [store],
@@ -492,8 +466,6 @@ export default function Page() {
         profileImage={settings.profile_image}
         profileX={settings.profile_pos_x}
         profileY={settings.profile_pos_y}
-        theme={settings.theme}
-        notify={notify}
         onNameChange={(planner_name) => void update({ planner_name })}
         // 사진과 위치를 한 번에 저장한다 — 두 번 나눠 저장하면 사진만 바뀌고 위치는
         // 예전 값으로 남는 순간이 생긴다.
@@ -504,9 +476,8 @@ export default function Page() {
             ...(next.y !== undefined && { profile_pos_y: next.y }),
           })
         }
-        onThemeChange={(theme: ThemeId) => void update({ theme })}
+        onOpenSettings={() => setSettingsOpen(true)}
         onSignIn={() => setAuthOpen(true)}
-        onSignOut={() => void signOut()}
       />
 
       <main className="flex min-w-0 flex-1 items-start gap-5 p-6">
@@ -580,10 +551,8 @@ export default function Page() {
             <ScheduleCard
               upcoming={upcoming}
               overdue={overdue}
-              reflections={reflections}
               today={today}
               onSelect={openView}
-              onSaveReflection={saveReflection}
             />
           )}
 
@@ -624,6 +593,24 @@ export default function Page() {
         onClose={() => setModalOpen(false)}
         onSubmit={submitTask}
         onDelete={deleteTask}
+      />
+
+      <SettingsModal
+        open={settingsOpen}
+        theme={settings.theme}
+        notify={notify}
+        email={email}
+        onClose={() => setSettingsOpen(false)}
+        onThemeChange={(theme: ThemeId) => void update({ theme })}
+        onChangePassword={changePassword}
+        onSignIn={() => {
+          setSettingsOpen(false);
+          setAuthOpen(true);
+        }}
+        onSignOut={() => {
+          setSettingsOpen(false);
+          void signOut();
+        }}
       />
 
       <AuthModal

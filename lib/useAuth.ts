@@ -47,6 +47,12 @@ export function useAuth() {
     if (!data.session) throw new NeedsEmailConfirm();
   }, []);
 
+  /** 로그인한 사람의 비밀번호를 바꾼다. 지금 세션으로 바로 고치므로 옛 비밀번호는 묻지 않는다. */
+  const changePassword = useCallback(async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw new Error(error.message);
+  }, []);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
   }, []);
@@ -60,5 +66,6 @@ export function useAuth() {
     signIn,
     signUp,
     signOut,
+    changePassword,
   };
 }

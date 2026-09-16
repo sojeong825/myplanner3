@@ -1,23 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import ReflectionPanel from "@/components/ReflectionPanel";
 import { formatTime, getDday, type DateKey } from "@/lib/date";
 import { TaskIcon } from "@/lib/icons";
-import type { Reflection } from "@/lib/reflections";
 import type { Task } from "@/lib/types";
 
-type TabId = "upcoming" | "overdue" | "reflect";
+type TabId = "upcoming" | "overdue";
 
 type Props = {
   /** 미완료 + 마감일 있음 + D-0~D-10. 별표 먼저, 그다음 마감일 오름차순으로 정렬돼 온다. */
   upcoming: Task[];
   /** 미완료 + 마감이 지남. 별표 먼저, 그다음 최근에 지난 순. */
   overdue: Task[];
-  reflections: Reflection[];
   today: DateKey;
   onSelect: (task: Task) => void;
-  onSaveReflection: (date: DateKey, content: string) => Promise<void>;
 };
 
 function Tab({
@@ -36,7 +32,7 @@ function Tab({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] transition ${
+      className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] transition ${
         active ? "bg-soft text-ink" : "text-ink-soft hover:text-ink"
       }`}
     >
@@ -54,14 +50,7 @@ function Tab({
   );
 }
 
-export default function ScheduleCard({
-  upcoming,
-  overdue,
-  reflections,
-  today,
-  onSelect,
-  onSaveReflection,
-}: Props) {
+export default function ScheduleCard({ upcoming, overdue, today, onSelect }: Props) {
   /**
    * 어느 탭을 보고 있는지. **오직 사용자가 누를 때만 바뀐다.**
    *
@@ -93,18 +82,9 @@ export default function ScheduleCard({
         >
           지난 일정
         </Tab>
-        <Tab active={tab === "reflect"} count={0} onClick={() => setTab("reflect")}>
-          회고
-        </Tab>
       </div>
 
-      {tab === "reflect" ? (
-        <ReflectionPanel
-          reflections={reflections}
-          today={today}
-          onSave={onSaveReflection}
-        />
-      ) : tasks.length === 0 ? (
+      {tasks.length === 0 ? (
         <p className="px-1 py-6 text-center text-[12px] text-ink-faint">
           {tab === "upcoming" ? "10일 안에 마감인 일정이 없어요" : "놓친 일정이 없어요"}
         </p>

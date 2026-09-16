@@ -1,13 +1,10 @@
 "use client";
 
 import CategoryFilter from "@/components/CategoryFilter";
-import NotifyToggle from "@/components/NotifyToggle";
 import PlannerName from "@/components/PlannerName";
 import ProfileAvatar from "@/components/ProfileAvatar";
-import ThemePicker from "@/components/ThemePicker";
 import type { Category, CategoryFilter as Filter } from "@/lib/categories";
-import type { SaveResult, ThemeId } from "@/lib/settings";
-import type { NotifyState } from "@/lib/useNotifications";
+import type { SaveResult } from "@/lib/settings";
 
 type Props = {
   pendingCount: number;
@@ -26,18 +23,15 @@ type Props = {
   /** 프로필 사진이 원형 틀에서 보일 위치(0~100%). */
   profileX: number;
   profileY: number;
-  theme: ThemeId;
-  /** PC 알림 스위치 상태. 기기마다 다르므로 settings가 아니라 훅에서 온다. */
-  notify: NotifyState;
   onNameChange: (name: string) => void;
   onProfileChange: (next: {
     image?: string | null;
     x?: number;
     y?: number;
   }) => Promise<SaveResult>;
-  onThemeChange: (theme: ThemeId) => void;
+  /** 테마·알림·계정은 전부 설정 모달로 옮겼다. 여기에는 여는 버튼만 있다. */
+  onOpenSettings: () => void;
   onSignIn: () => void;
-  onSignOut: () => void;
 };
 
 function Stat({ label, value }: { label: string; value: number }) {
@@ -63,13 +57,10 @@ export default function Sidebar({
   profileImage,
   profileX,
   profileY,
-  theme,
-  notify,
   onNameChange,
   onProfileChange,
-  onThemeChange,
+  onOpenSettings,
   onSignIn,
-  onSignOut,
 }: Props) {
   const signedIn = email !== null;
 
@@ -126,24 +117,42 @@ export default function Sidebar({
         onRemove={onRemoveCategory}
       />
 
-      <div className="mt-auto flex flex-col gap-4">
-        <NotifyToggle {...notify} />
+      {/*
+        자주 건드리지 않는 것(테마·알림·계정)은 전부 설정 모달로 넣었다. 늘 펼쳐두면
+        매일 보는 화면(할 일·분류)을 밀어내기만 한다.
+      */}
+      <div className="mt-auto border-t border-line pt-3">
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-ink-soft transition hover:bg-soft/50 hover:text-ink"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            className="size-4 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+          >
+            <circle cx="12" cy="12" r="3.2" />
+            <path d="M19.4 14.6a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5v.2a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H2a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H8a1.6 1.6 0 0 0 1-1.5V2a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V8a1.6 1.6 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="text-[12px]">설정</span>
+        </button>
 
-        <ThemePicker value={theme} onChange={onThemeChange} />
-
-        {signedIn && (
-          <div className="border-t border-line pt-3">
-            <p className="truncate px-1 text-[11px] text-ink-faint" title={email}>
-              {email}
-            </p>
-            <button
-              type="button"
-              onClick={onSignOut}
-              className="mt-1 px-1 text-[11px] text-ink-faint underline underline-offset-2 transition hover:text-ink-soft"
-            >
-              로그아웃
-            </button>
-          </div>
+        {/* 로그인 전에는 설정 안에 묻히지 않게 사이드바에도 한 번 더 권한다. */}
+        {!signedIn && (
+          <button
+            type="button"
+            onClick={onSignIn}
+            className="mt-1 w-full rounded-lg px-2 py-1.5 text-left text-[11px] text-ink-faint underline underline-offset-2 transition hover:text-ink-soft"
+          >
+            로그인
+          </button>
         )}
       </div>
     </aside>

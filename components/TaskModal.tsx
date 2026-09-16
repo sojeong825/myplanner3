@@ -217,19 +217,10 @@ export default function TaskModal({
               )}
             </div>
 
-            {!iconOpen && (
-              <p className="px-1 pt-1 text-[11px] text-ink-faint">
-                {pickedIcon === null
-                  ? "아이콘은 제목·분류에 맞춰 자동으로 붙어요. 눌러서 바꿀 수 있어요"
-                  : "아이콘을 직접 골랐어요. 눌러서 다시 바꿀 수 있어요"}
-              </p>
-            )}
           </label>
 
           <div>
-            <span className="text-[12px] text-ink-soft">
-              마감일 (선택) · 여러 날을 누르면 각각 만들어져요
-            </span>
+            <span className="text-[12px] text-ink-soft">마감일</span>
             <div className="mt-1.5">
               {/*
                 수정할 때도 날짜를 더 고를 수 있다. 이 일정은 첫 날짜로 옮겨가고,
@@ -241,7 +232,7 @@ export default function TaskModal({
             {/* 시간은 날짜를 고른 뒤에만 의미가 있다. 날짜 없는 시간은 언제인지 알 수 없다. */}
             {dates.length > 0 && (
               <label className="mt-2 flex items-center gap-2">
-                <span className="shrink-0 text-[12px] text-ink-soft">시간 (선택)</span>
+                <span className="shrink-0 text-[12px] text-ink-soft">시간</span>
                 <input
                   type="time"
                   value={time}
@@ -262,7 +253,7 @@ export default function TaskModal({
           </div>
 
           <div>
-            <span className="text-[12px] text-ink-soft">분류 (선택)</span>
+            <span className="text-[12px] text-ink-soft">분류</span>
 
             {categories.length === 0 ? (
               <p className="mt-1.5 text-[12px] leading-relaxed text-ink-faint">
@@ -291,7 +282,7 @@ export default function TaskModal({
           </div>
 
           <label className="block">
-            <span className="text-[12px] text-ink-soft">메모 (선택)</span>
+            <span className="text-[12px] text-ink-soft">메모</span>
             <textarea
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
