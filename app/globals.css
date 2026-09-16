@@ -55,17 +55,16 @@
 }
 
 @font-face {
-  font-family: "Isamanru";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_20-10@1.0/GongGothicMedium.woff") format("woff");
-  font-weight: normal;
-  font-display: swap;
-}
-
-@font-face {
   font-family: "OngleipParkDahyeon";
   src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/2411-3@1.0/Ownglyph_ParkDaHyun.woff2") format("woff2");
   font-weight: normal;
   font-display: swap;
+  /*
+   * 이 글꼴만 글자가 유난히 작게 그려져서, 같은 13px이라도 다른 글꼴보다 작아 보인다.
+   * size-adjust는 글리프 자체를 키우므로 화면 코드(px 값)를 하나도 건드리지 않고
+   * 이 글꼴일 때만 커진다. font-size-adjust와 달리 '몇 %'로 바로 조절된다.
+   */
+  size-adjust: 118%;
 }
 
 @font-face {
@@ -100,7 +99,6 @@
 :root[data-font="nanumround"] { --app-font: "NanumSquareRound"; }
 :root[data-font="chosunmyungjo"] { --app-font: "ChosunilboMyungjo"; }
 :root[data-font="ridibatang"] { --app-font: "RIDIBatang"; }
-:root[data-font="isamanru"] { --app-font: "Isamanru"; }
 :root[data-font="parkdahyun"] { --app-font: "OngleipParkDahyeon"; }
 :root[data-font="konkon"] { --app-font: "OngleipKonkon"; }
 :root[data-font="fromsol"] { --app-font: "DearFromsol"; }
@@ -355,6 +353,12 @@ body {
   background-attachment: fixed;
   color: var(--ink);
   font-family: var(--font-sans);
+  /*
+   * 자간은 여기 한 곳에서만 정한다. 예전에는 월간 달력만 벌리고 주간만 죄었는데,
+   * 글꼴을 고를 수 있게 되면서 글꼴마다 맞는 자간이 달라져 그 예외가 의미를 잃었다.
+   * 컴포넌트에 tracking을 흩뿌리지 말 것 — 여기만 고치면 전체가 따라온다.
+   */
+  letter-spacing: -0.02em;
 }
 
 /* 얇고 연한 스크롤바 — 카드 안에서 튀지 않게 */

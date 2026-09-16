@@ -4,13 +4,6 @@ import { buildWeek, formatTime, WEEKDAYS, type DateKey } from "@/lib/date";
 import { TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
-/**
- * 주간은 한 칸이 7분의 1로 좁아서 자간을 죈다. 같은 폭에 한두 글자가 더 들어가고,
- * line-clamp-3에 걸려 잘리는 제목이 그만큼 줄어든다.
- * 월간은 반대로 MonthGrid에서 자간을 벌린다.
- */
-const WEEK_TRACKING = "tracking-[-0.02em]";
-
 type Props = {
   anchor: DateKey;
   today: DateKey;
@@ -60,7 +53,7 @@ export default function WeekGrid({
           >
             <div className="flex flex-col items-center gap-1 py-3">
               <span
-                className={`text-[12px] ${WEEK_TRACKING} ${
+                className={`text-[12px] ${
                   day.weekday === 0 ? "text-accent-deep" : "text-ink-soft"
                 }`}
               >
@@ -88,7 +81,7 @@ export default function WeekGrid({
                   }}
                   title={task.title}
                   // 항목은 흰 배경 + 여백만으로 구분한다. 완료는 텍스트만 흐리게.
-                  className={`flex cursor-pointer items-start gap-1.5 rounded-[10px] bg-card px-2 py-1.5 text-left text-[11px] leading-snug ${WEEK_TRACKING} transition hover:bg-soft ${
+                  className={`flex cursor-pointer items-start gap-1.5 rounded-[10px] bg-card px-2 py-1.5 text-left text-[11px] leading-snug transition hover:bg-soft ${
                     task.is_done ? "text-ink-faint line-through" : "text-ink"
                   }`}
                 >

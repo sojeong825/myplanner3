@@ -57,14 +57,14 @@ export default function PlannerName({ name, onSave }: Props) {
           }
           commit();
         }}
-        className="w-full rounded-lg border border-line bg-card px-2 py-1 text-center text-[15px] font-medium tracking-tight outline-none focus:border-accent"
+        className="w-full rounded-lg border border-line bg-card px-2 py-1 text-center text-[15px] font-medium outline-none focus:border-accent"
       />
     );
   }
 
   return (
     <div className="flex items-center justify-center gap-1">
-      <p className="truncate text-[15px] font-medium tracking-tight" title={name}>
+      <p className="truncate text-[15px] font-medium" title={name}>
         {name}
       </p>
       <button

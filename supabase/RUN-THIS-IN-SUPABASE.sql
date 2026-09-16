@@ -310,10 +310,13 @@ comment on column public.settings.font is
 
 alter table public.settings drop constraint if exists settings_font_check;
 
+-- 이사만루를 뺐다. 그걸 고른 채로 남아 있으면 아래 제약에 걸리므로 먼저 되돌린다.
+update public.settings set font = 'joseon' where font = 'isamanru';
+
 alter table public.settings
   add constraint settings_font_check
   check (font in ('joseon', 'pretendard', 'nanumgothic', 'nanumround',
-                  'chosunmyungjo', 'ridibatang', 'isamanru',
+                  'chosunmyungjo', 'ridibatang',
                   'parkdahyun', 'konkon', 'fromsol', 'mona12'));
 
 

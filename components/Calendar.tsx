@@ -114,7 +114,7 @@ export default function Calendar({
             label={view === "month" ? "다음 달" : "다음 주"}
           />
 
-          <h2 className="ml-1 whitespace-nowrap text-[19px] font-medium tracking-tight">{title}</h2>
+          <h2 className="ml-1 whitespace-nowrap text-[19px] font-medium">{title}</h2>
 
           <div className="ml-auto flex items-center gap-2">
             <ViewToggle value={view} onChange={onViewChange} />

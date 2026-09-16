@@ -4,13 +4,6 @@ import { buildMonthGrid, formatTime, WEEKDAYS, type DateKey } from "@/lib/date";
 import { TaskIcon } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
-/**
- * 월간은 칸이 넉넉해서 자간을 살짝 벌린다. 조선굴림체는 글자 사이가 촘촘한 편이라
- * 작은 크기(11~12px)에서 붙어 보이는데, 여기서 한 번만 풀어준다.
- * 주간은 반대로 칸이 좁아서 WeekGrid에서 자간을 좁힌다.
- */
-const MONTH_TRACKING = "tracking-[0.025em]";
-
 type Props = {
   year: number;
   month: number;
@@ -37,7 +30,7 @@ export default function MonthGrid({
         {WEEKDAYS.map((w, i) => (
           <div
             key={w}
-            className={`py-2.5 text-center text-[13px] ${MONTH_TRACKING} ${
+            className={`py-2.5 text-center text-[13px] ${
               i === 0 ? "text-accent-deep" : "text-ink-soft"
             }`}
           >
@@ -75,7 +68,7 @@ export default function MonthGrid({
                 className={
                   isToday
                     ? "grid size-6 shrink-0 place-items-center self-start rounded-full bg-accent text-[12px] font-medium text-white"
-                    : `self-start px-0.5 text-[13px] ${MONTH_TRACKING} ${
+                    : `self-start px-0.5 text-[13px] ${
                         cell.weekday === 0
                           ? "text-accent-deep"
                           : cell.inMonth
@@ -106,7 +99,7 @@ export default function MonthGrid({
                       onSelect(task);
                     }}
                     title={task.title}
-                    className={`flex cursor-pointer items-center gap-1 rounded px-0.5 text-left text-[12px] leading-5 ${MONTH_TRACKING} transition hover:bg-soft ${
+                    className={`flex cursor-pointer items-center gap-1 rounded px-0.5 text-left text-[12px] leading-5 transition hover:bg-soft ${
                       task.is_done ? "text-ink-faint line-through" : "text-ink"
                     }`}
                   >

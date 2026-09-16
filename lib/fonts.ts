@@ -55,12 +55,6 @@ export const FONTS = [
     note: "책 읽는 느낌의 바탕",
   },
   {
-    id: "isamanru",
-    label: "이사만루",
-    family: "Isamanru",
-    note: "묵직하고 각진 고딕",
-  },
-  {
     id: "parkdahyun",
     label: "온글잎 박다현체",
     family: "OngleipParkDahyeon",
@@ -105,4 +99,4 @@ export function fontLabel(id: FontId): string {
  * 한 곳만 적으면 왜 저것만 적혀 있는지 이상하니 전부 적는다.
  */
 export const FONT_CREDITS =
-  "글꼴 제공: 네이버, 조선일보, 리디주식회사, 공게임즈 X 폰트릭스, 온글잎(보이저엑스), 그리운, Monad ABXY, 길형진";
+  "글꼴 제공: 네이버, 조선일보, 리디주식회사, 온글잎(보이저엑스), 그리운, Monad ABXY, 길형진";
