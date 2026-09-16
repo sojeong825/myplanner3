@@ -32,6 +32,7 @@ npm run dev
 | 프로필 사진 | 사이드바 상단 아바타 → `components/ProfileAvatar.tsx` |
 | 플래너 이름 | 이름 옆 연필 → `components/PlannerName.tsx` |
 | 테마 변경 | 설정 모달 → `components/ThemePicker.tsx` |
+| 글꼴 변경 | 설정 모달 → `components/FontPicker.tsx` + `lib/fonts.ts` |
 | PC 알림 | 설정 모달 → `components/NotifyToggle.tsx` + `lib/useNotifications.ts` |
 | 카운터 · 배너 | 가운데 상단 → `CounterCard` / `BannerCard` |
 
@@ -103,6 +104,56 @@ accent가 옅어진 만큼 형광펜(`.marker`)은 62%로 진하게 섞는다. 4
 
 새로고침 시 기본 핑크가 한 프레임 보이는 걸 막으려고, `lib/settings.ts`의
 `THEME_BOOT_SCRIPT`를 `<head>`에 인라인으로 넣어 첫 페인트 전에 `data-theme`을 맞춘다.
+
+### 글꼴
+
+열한 가지 중에 고른다. 테마와 **똑같은 구조**다 — 설정에 값 하나를 저장하고, 화면은
+`data-font`를 갈아끼운다. 컴포넌트는 글꼴 이름을 모르고 `--font-sans`만 쓴다.
+
+```
+:root[data-font="ridibatang"] { --app-font: "RIDIBatang"; }
+--font-sans: var(--app-font), var(--font-noto-kr), "Malgun Gothic", ...
+```
+
+폴백을 뒤에 남겨두는 것이 중요하다. CDN이 늦거나 실패해도 글자는 보여야 한다.
+
+#### 파일을 두지 않는 이유
+
+한글 글꼴은 글자 수가 많아 하나에 0.3~1.3MB다. 열한 개를 저장소에 넣으면 배포 용량이
+8MB 가까이 불어난다. 전부 눈누(noonnu.cc)에 올라온 CDN 주소를 그대로 쓴다.
+
+**평소에는 고른 글꼴 하나만 내려받는다.** 브라우저는 실제로 쓰이는 `@font-face`만
+가져가므로 나머지 열 개는 건드리지도 않는다. 설정 모달을 열면 미리보기 때문에 전부
+받아오지만, 그건 한 번뿐이고 그 뒤로는 캐시에서 온다.
+
+미리보기에서 **글꼴 이름을 그 글꼴로 그리는 것**이 그 비용을 치르는 이유다. 이름만
+나열하면 '리디바탕'이 어떻게 생겼는지 알 수 없어서 하나씩 눌러보게 된다.
+
+#### 넣기 전에 확인할 것
+
+**라이선스를 반드시 페이지에서 직접 확인한다.** '무료 글꼴'이라도 웹폰트(임베딩)만
+따로 막아둔 것이 흔하다. 지금 들어 있는 열한 개는 전부 **임베딩 허용 + 상업적 이용
+가능**이고, 공통 금지 사항은 폰트 파일 자체를 파는 것뿐이다.
+
+리디바탕은 라이선스에서 출처 표기를 권한다(의무는 아니다). 한 곳만 적으면 왜 저것만
+적혀 있는지 이상해서, 글꼴 목록 맨 아래에 제공처를 전부 적는다(`FONT_CREDITS`).
+
+주소는 넣기 전에 **실제로 200이 오는지 확인할 것.** 눈누 페이지에 적힌 주소가 옮겨지는
+과정에서 틀리는 일이 있다 — 나눔고딕은 눈누에 CDN이 없어서 fontsource(네이버 원본을
+서브셋한 것)로 대신한다.
+
+굵기는 전부 normal 하나만 싣는다. 이 앱은 500(font-medium)까지만 쓰고 그건 브라우저가
+만드는 가짜 굵기로 충분하다. 굵기마다 파일을 더 실으면 용량만 두 배가 된다.
+
+도트 글꼴(Mona12)만 `locl`을 켜준다. 켜지 않으면 같은 코드포인트를 공유하는
+중국어·일본어 자형이 섞여 나온다.
+
+#### 글꼴을 더할 때
+
+고칠 곳이 **네 군데**다 — `lib/fonts.ts`의 배열, `globals.css`의 `@font-face`,
+같은 파일의 `data-font` 규칙, 그리고 `settings_font_check` 제약. 하나만 빠뜨려도
+조용히 어긋난다(CSS를 빠뜨리면 안 바뀌고, DB를 빠뜨리면 저장이 실패한다).
+`lib/fonts.test.ts`가 네 군데를 대조한다.
 
 ### 프로필 사진 · 배너 이미지
 
@@ -497,7 +548,8 @@ localStorage에는 마이그레이션을 걸 곳이 없어서** 읽는 쪽이 �
 스키마는 `supabase/migrations/0001_create_tasks.sql`부터 번호순으로 쌓인다.
 `icon`/`icon_color`(0002), `user_id`와 `settings`(0003), `memo`(0004),
 `area`/`category`/`is_starred`와 테마 4종(0005), 이모지 아이콘(0006),
-사용자 정의 분류(0007), 사진 위치(0008), 마감 시간(0009), 회고(0010)가 뒤에 붙었다.
+사용자 정의 분류(0007), 사진 위치(0008), 마감 시간(0009), 회고(0010), 글꼴(0011)이
+뒤에 붙었다.
 새 테마를 넣을 때는 `settings_theme_check`도 함께 넓혀야 한다 — 목록이 코드와 DB
 양쪽에 있다.
 새로 추가하는 컬럼은 전부 nullable이나 default로 둔다 — 그래야 기존 행을 건드리지 않고
@@ -600,6 +652,7 @@ localStorage에만 쓴다.
 | `profile_pos_x` · `profile_pos_y` | 0~100 (%) | `50` (가운데) |
 | `banner_pos_x` · `banner_pos_y` | 0~100 (%) | `50` (가운데) |
 | `theme` | 9종 (아래) | `pink` |
+| `font` | 11종 (`lib/fonts.ts`) | `joseon` (조선굴림체) |
 | `calendar_view` | `month` / `week` | `month` |
 | `banner_image` | data URL (webp), 긴 변 960px | `null` |
 | `counter_date` | `'YYYY-MM-DD'` | `null` |

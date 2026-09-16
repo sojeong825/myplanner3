@@ -4,6 +4,7 @@
  */
 
 import type { CategoryFilter } from "@/lib/categories";
+import { DEFAULT_FONT, FONTS, isFontId, type FontId } from "@/lib/fonts";
 
 export const THEMES = [
   { id: "pink", label: "핑크", swatch: "#ecb9be" },
@@ -38,6 +39,8 @@ export type Settings = {
   profile_pos_x: number;
   profile_pos_y: number;
   theme: ThemeId;
+  /** 화면 전체에 쓰는 글꼴. 테마와 같은 방식으로 data-font를 갈아끼운다. */
+  font: FontId;
   calendar_view: CalendarView;
   /** 카운터 옆 배너 카드. 원본 비율 그대로 줄여 저장한 data URL. 없으면 placeholder. */
   banner_image: string | null;
@@ -64,6 +67,7 @@ export const DEFAULT_SETTINGS: Settings = {
   profile_pos_x: CENTER,
   profile_pos_y: CENTER,
   theme: "pink",
+  font: DEFAULT_FONT,
   calendar_view: "month",
   banner_image: null,
   banner_pos_x: CENTER,
@@ -76,13 +80,15 @@ export const DEFAULT_SETTINGS: Settings = {
 export const SETTINGS_KEY = "my-planner:settings";
 
 /**
- * 첫 페인트용 테마 캐시.
- * 로그인 상태에서는 설정이 서버에 있어 불러오기 전까지 테마를 알 수 없다.
- * 마지막으로 쓴 테마만 따로 남겨두고 부팅 스크립트가 이걸 먼저 본다.
+ * 첫 페인트용 캐시.
+ * 로그인 상태에서는 설정이 서버에 있어 불러오기 전까지 테마·글꼴을 알 수 없다.
+ * 마지막으로 쓴 값만 따로 남겨두고 부팅 스크립트가 이걸 먼저 본다.
  */
 export const THEME_CACHE_KEY = "my-planner:theme";
+export const FONT_CACHE_KEY = "my-planner:font";
 
 const THEME_IDS: string[] = THEMES.map((t) => t.id);
+const FONT_IDS: string[] = FONTS.map((f) => f.id);
 
 const asDataUrl = (v: unknown) =>
   typeof v === "string" && v.startsWith("data:image/") ? v : null;
@@ -111,6 +117,7 @@ export function coerceSettings(raw: unknown): Settings {
     profile_pos_x: asPercent(v.profile_pos_x),
     profile_pos_y: asPercent(v.profile_pos_y),
     theme: THEME_IDS.includes(v.theme as string) ? (v.theme as ThemeId) : DEFAULT_SETTINGS.theme,
+    font: isFontId(v.font) ? v.font : DEFAULT_FONT,
     calendar_view:
       v.calendar_view === "week" || v.calendar_view === "month"
         ? v.calendar_view
@@ -137,12 +144,19 @@ export type SaveResult = { ok: true } | { ok: false; message: string };
  */
 export const THEME_BOOT_SCRIPT = `
 try{
+  var s=JSON.parse(localStorage.getItem(${JSON.stringify(SETTINGS_KEY)})||"{}");
+
   var ids=${JSON.stringify(THEME_IDS)};
   var t=localStorage.getItem(${JSON.stringify(THEME_CACHE_KEY)});
-  if(ids.indexOf(t)<0){
-    var s=JSON.parse(localStorage.getItem(${JSON.stringify(SETTINGS_KEY)})||"{}");
-    t=ids.indexOf(s.theme)>=0?s.theme:${JSON.stringify(DEFAULT_SETTINGS.theme)};
-  }
+  if(ids.indexOf(t)<0){t=ids.indexOf(s.theme)>=0?s.theme:${JSON.stringify(DEFAULT_SETTINGS.theme)};}
   document.documentElement.dataset.theme=t;
-}catch(e){document.documentElement.dataset.theme=${JSON.stringify(DEFAULT_SETTINGS.theme)}}
+
+  var fids=${JSON.stringify(FONT_IDS)};
+  var f=localStorage.getItem(${JSON.stringify(FONT_CACHE_KEY)});
+  if(fids.indexOf(f)<0){f=fids.indexOf(s.font)>=0?s.font:${JSON.stringify(DEFAULT_FONT)};}
+  document.documentElement.dataset.font=f;
+}catch(e){
+  document.documentElement.dataset.theme=${JSON.stringify(DEFAULT_SETTINGS.theme)};
+  document.documentElement.dataset.font=${JSON.stringify(DEFAULT_FONT)};
+}
 `.trim();

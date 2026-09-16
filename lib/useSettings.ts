@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   DEFAULT_SETTINGS,
+  FONT_CACHE_KEY,
   THEME_CACHE_KEY,
   type SaveResult,
   type Settings,
@@ -31,13 +32,15 @@ export function useSettings(store: Store, ready: boolean) {
     };
   }, [store, ready]);
 
-  // 테마는 첫 페인트 때 인라인 스크립트가 이미 적용했고, 이후 변경만 여기서 반영한다.
-  // 서버에서 온 테마도 캐시에 남겨야 다음 새로고침에서 깜빡이지 않는다.
+  // 테마·글꼴은 첫 페인트 때 인라인 스크립트가 이미 적용했고, 이후 변경만 여기서 반영한다.
+  // 서버에서 온 값도 캐시에 남겨야 다음 새로고침에서 깜빡이지 않는다.
   useEffect(() => {
     if (!settings) return;
     document.documentElement.dataset.theme = settings.theme;
+    document.documentElement.dataset.font = settings.font;
     try {
       window.localStorage.setItem(THEME_CACHE_KEY, settings.theme);
+      window.localStorage.setItem(FONT_CACHE_KEY, settings.font);
     } catch {
       // 저장에 실패해도 화면에는 이미 적용돼 있으니 넘어간다.
     }

@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import FontPicker from "@/components/FontPicker";
 import NotifyToggle from "@/components/NotifyToggle";
 import ThemePicker from "@/components/ThemePicker";
+import type { FontId } from "@/lib/fonts";
 import type { ThemeId } from "@/lib/settings";
 import { PASSWORD_MIN } from "@/lib/useAuth";
 import type { NotifyState } from "@/lib/useNotifications";
@@ -10,11 +12,13 @@ import type { NotifyState } from "@/lib/useNotifications";
 type Props = {
   open: boolean;
   theme: ThemeId;
+  font: FontId;
   notify: NotifyState;
   /** null이면 게스트 — 계정 칸 대신 로그인 안내가 나온다. */
   email: string | null;
   onClose: () => void;
   onThemeChange: (theme: ThemeId) => void;
+  onFontChange: (font: FontId) => void;
   onChangePassword: (password: string) => Promise<void>;
   onSignIn: () => void;
   onSignOut: () => void;
@@ -39,10 +43,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function SettingsModal({
   open,
   theme,
+  font,
   notify,
   email,
   onClose,
   onThemeChange,
+  onFontChange,
   onChangePassword,
   onSignIn,
   onSignOut,
@@ -135,6 +141,10 @@ export default function SettingsModal({
         <div className="mt-5 space-y-4">
           <Section title="테마">
             <ThemePicker value={theme} onChange={onThemeChange} />
+          </Section>
+
+          <Section title="글꼴">
+            <FontPicker value={font} onChange={onFontChange} />
           </Section>
 
           <Section title="알림">

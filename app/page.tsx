@@ -20,6 +20,7 @@ import {
 } from "@/lib/categories";
 import { addDays, addMonthsKey, diffDays, todayKey, type DateKey } from "@/lib/date";
 import type { Reflection } from "@/lib/reflections";
+import type { FontId } from "@/lib/fonts";
 import type { CalendarView, ThemeId } from "@/lib/settings";
 import {
   clearLocalData,
@@ -629,10 +630,12 @@ export default function Page() {
       <SettingsModal
         open={settingsOpen}
         theme={settings.theme}
+        font={settings.font}
         notify={notify}
         email={email}
         onClose={() => setSettingsOpen(false)}
         onThemeChange={(theme: ThemeId) => void update({ theme })}
+        onFontChange={(font: FontId) => void update({ font })}
         onChangePassword={changePassword}
         onSignIn={() => {
           setSettingsOpen(false);

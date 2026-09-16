@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Sans_KR } from "next/font/google";
+import { DEFAULT_FONT } from "@/lib/fonts";
 import { DEFAULT_SETTINGS, THEME_BOOT_SCRIPT } from "@/lib/settings";
 import "./globals.css";
 
@@ -22,8 +23,10 @@ export default function RootLayout({
   return (
     <html
       lang="ko"
-      // 아래 인라인 스크립트가 하이드레이션 전에 data-theme을 바꾸므로 DOM 값을 그대로 둔다.
+      // 아래 인라인 스크립트가 하이드레이션 전에 data-theme·data-font를 바꾸므로
+      // DOM 값을 그대로 둔다.
       data-theme={DEFAULT_SETTINGS.theme}
+      data-font={DEFAULT_FONT}
       suppressHydrationWarning
       className={`${notoKr.variable} antialiased`}
     >

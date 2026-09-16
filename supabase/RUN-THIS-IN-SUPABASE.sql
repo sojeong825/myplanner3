@@ -1,5 +1,5 @@
 -- ============================================================
---  my planner 업데이트 SQL  (0005 ~ 0010 한 번에)
+--  my planner 업데이트 SQL  (0005 ~ 0011 한 번에)
 --
 --  ▶ 이 파일 전체를 복사해서 Supabase SQL Editor에 붙여넣고 Run 하세요.
 --
@@ -296,7 +296,29 @@ create policy "reflections: owner delete" on public.reflections
 
 
 -- ============================================================
---  10. 확인 — 아래 표가 전부 ✅ 면 성공입니다
+--  10. 글꼴 고르기 (v1.9)
+--
+--  테마와 똑같은 모양의 설정이다. 기본값은 지금까지 쓰던 조선굴림체라,
+--  이 칸이 생겨도 보이는 건 그대로다.
+-- ============================================================
+
+alter table public.settings
+  add column if not exists font text not null default 'joseon';
+
+comment on column public.settings.font is
+  '화면 전체에 쓰는 글꼴. 눈누(noonnu.cc) 무료 글꼴 중에서 고른다.';
+
+alter table public.settings drop constraint if exists settings_font_check;
+
+alter table public.settings
+  add constraint settings_font_check
+  check (font in ('joseon', 'pretendard', 'nanumgothic', 'nanumround',
+                  'chosunmyungjo', 'ridibatang', 'isamanru',
+                  'parkdahyun', 'konkon', 'fromsol', 'mona12'));
+
+
+-- ============================================================
+--  11. 확인 — 아래 표가 전부 ✅ 면 성공입니다
 -- ============================================================
 
 with check_list(순서, 항목, 통과) as (
@@ -323,6 +345,10 @@ with check_list(순서, 항목, 통과) as (
   select 6, '옛 settings.filter_area 칸이 사라졌다', not exists (
     select 1 from information_schema.columns
     where table_schema = 'public' and table_name = 'settings' and column_name = 'filter_area')
+  union all
+  select 10, 'settings.font 칸이 생겼다', exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'settings' and column_name = 'font')
   union all
   select 9, 'reflections 테이블이 생겼다', exists (
     select 1 from information_schema.tables
