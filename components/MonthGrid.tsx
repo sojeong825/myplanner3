@@ -78,7 +78,7 @@ export default function MonthGrid({
         선이 먼저 보인다 — 애플 캘린더도 가로줄만 긋는다. 넓은 화면은 칸마다 일정 제목이
         여러 줄 들어가므로 격자가 있는 편이 낫다.
       */}
-      <div className="grid grid-cols-7 grid-rows-6 overflow-hidden rounded-b-card lg:gap-px lg:bg-line-soft">
+      <div className="grid grid-cols-7 overflow-hidden rounded-b-card lg:grid-rows-6 lg:gap-px lg:bg-line-soft">
         {cells.map((cell) => {
           const dayTasks = tasksByDate.get(cell.key) ?? [];
           const isToday = cell.key === today;
@@ -149,10 +149,13 @@ export default function MonthGrid({
                 이모지는 칩에 넣지 않는다 — 칸 하나가 가로 50px 남짓이라 이모지가
                 두세 글자를 먹는다. 이모지는 그날 목록과 할 일 쪽에 그대로 있다.
 
-                두 개까지만 눕히고 나머지는 '+n'. 더 넣으면 줄마다 글자가 반 토막 난다.
+                네 개까지 눕힌다. 칸이 그만큼 세로로 길어지지만, 가려서 +n으로 접어두면 결국 눌러봐야 안다.
+                다섯 개 이상인 날만 +n을 붙인다 — 말없이 잘라버리면 없는 일정처럼 보인다.
+                폰에서는 줄 높이를 고정하지 않는다(grid-rows-6은 넓은 화면만). 고정하면 바쁜 날 하나 때문에
+                여섯 줄이 전부 그 높이로 늘어난다.
               */}
               <div className="flex flex-col gap-px lg:hidden">
-                {dayTasks.slice(0, 2).map((task) => (
+                {dayTasks.slice(0, 4).map((task) => (
                   <span
                     key={task.id}
                     className={`truncate rounded-[3px] px-1 text-[10px] leading-[15px] ${chipColor(
@@ -163,9 +166,9 @@ export default function MonthGrid({
                     {task.title}
                   </span>
                 ))}
-                {dayTasks.length > 2 && (
+                {dayTasks.length > 4 && (
                   <span className="px-1 text-[9px] leading-[13px] text-ink-faint">
-                    +{dayTasks.length - 2}
+                    +{dayTasks.length - 4}
                   </span>
                 )}
               </div>
