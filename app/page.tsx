@@ -534,10 +534,17 @@ export default function Page() {
 
   const view: CalendarView = settings?.calendar_view ?? "month";
 
+  /** 화살표 한 번에 얼마나 움직이는지 — 보고 있는 단위만큼. */
   const step = useCallback(
     (delta: number) =>
       setAnchor((a) =>
-        a === null ? a : view === "month" ? addMonthsKey(a, delta) : addDays(a, delta * 7),
+        a === null
+          ? a
+          : view === "month"
+            ? addMonthsKey(a, delta)
+            : view === "day"
+              ? addDays(a, delta)
+              : addDays(a, delta * 7),
       ),
     [view],
   );
@@ -751,8 +758,8 @@ export default function Page() {
                 onSelect={openView}
                 onToggleDone={toggleTask}
                 onOpenDay={setDaySheetKey}
-                // 헤더 버튼은 날짜 없이 연다. 달력 칸을 눌러야 날짜가 붙는다.
-                onAdd={() => openAdd(null)}
+                // 주간 요일 줄에서 고른 날. 같은 주 안이라 보이는 주는 그대로다.
+                onSelectDay={setAnchor}
               />
             </div>
 

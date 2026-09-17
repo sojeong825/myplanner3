@@ -148,3 +148,15 @@ export function formatTime(hhmm: string): string {
   const hour12 = h % 12 === 0 ? 12 : h % 12;
   return `${half} ${hour12}:${pad(m)}`;
 }
+
+/** '9월 17일 (수)'. 일간 화면 제목과 그날 목록 머리에 쓴다. */
+export function formatDayTitle(key: DateKey): string {
+  const { y, m, d } = parts(key);
+  return `${m}월 ${d}일 (${WEEKDAYS[new Date(y, m - 1, d).getDay()]})`;
+}
+
+/** 그 날짜의 요일 번호(0=일). 요일 머리글에서 오늘 칸만 또렷하게 둘 때 쓴다. */
+export function weekdayOf(key: DateKey): number {
+  const { y, m, d } = parts(key);
+  return new Date(y, m - 1, d).getDay();
+}

@@ -21,7 +21,7 @@ export const THEMES = [
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];
-export type CalendarView = "month" | "week";
+export type CalendarView = "month" | "week" | "day";
 
 export const COUNTER_LABEL_MAX = 20;
 export const PLANNER_NAME_MAX = 20;
@@ -119,7 +119,7 @@ export function coerceSettings(raw: unknown): Settings {
     theme: THEME_IDS.includes(v.theme as string) ? (v.theme as ThemeId) : DEFAULT_SETTINGS.theme,
     font: isFontId(v.font) ? v.font : DEFAULT_FONT,
     calendar_view:
-      v.calendar_view === "week" || v.calendar_view === "month"
+      v.calendar_view === "week" || v.calendar_view === "month" || v.calendar_view === "day"
         ? v.calendar_view
         : DEFAULT_SETTINGS.calendar_view,
     banner_image: asDataUrl(v.banner_image),

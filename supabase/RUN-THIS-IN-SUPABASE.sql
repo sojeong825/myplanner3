@@ -1,5 +1,5 @@
 -- ============================================================
---  my planner 업데이트 SQL  (0005 ~ 0013 한 번에)
+--  my planner 업데이트 SQL  (0005 ~ 0014 한 번에)
 --
 --  ▶ 이 파일 전체를 복사해서 Supabase SQL Editor에 붙여넣고 Run 하세요.
 --
@@ -322,7 +322,23 @@ alter table public.settings
 
 
 -- ============================================================
---  11. 확인 — 아래 표가 전부 ✅ 면 성공입니다
+--  11. 달력 보기에 '일간' 더하기  (0014)
+--
+--  좁은 화면에서 한 주를 일곱 칸으로 쪼개면 한 칸이 50px이라 제목이 들어가지
+--  않는다. 하루만 보는 화면이 있으면 그날 할 일을 목록으로 그대로 읽는다.
+--
+--  제약을 넓히는 방향이라 기존 행을 먼저 고칠 일은 없다.
+-- ============================================================
+
+alter table public.settings drop constraint if exists settings_view_check;
+
+alter table public.settings
+  add constraint settings_view_check
+  check (calendar_view in ('month', 'week', 'day'));
+
+
+-- ============================================================
+--  12. 확인 — 아래 표가 전부 ✅ 면 성공입니다
 -- ============================================================
 
 with check_list(순서, 항목, 통과) as (
@@ -366,6 +382,10 @@ with check_list(순서, 항목, 통과) as (
     select count(*) = 4 from information_schema.columns
     where table_schema = 'public' and table_name = 'settings'
       and column_name in ('profile_pos_x', 'profile_pos_y', 'banner_pos_x', 'banner_pos_y'))
+  union all
+  select 11, '달력 보기에 일간이 허용된다', exists (
+    select 1 from information_schema.check_constraints
+    where constraint_name = 'settings_view_check' and check_clause like '%day%')
 )
 select 항목, case when 통과 then '✅ 완료' else '❌ 실패' end as 결과
 from check_list

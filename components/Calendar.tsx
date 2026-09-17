@@ -1,13 +1,23 @@
 "use client";
 
+import DayAgenda from "@/components/DayAgenda";
 import MonthGrid from "@/components/MonthGrid";
 import WeekGrid from "@/components/WeekGrid";
-import { formatMonthTitle, formatWeekTitle, keyParts, type DateKey } from "@/lib/date";
+import {
+  formatDayTitle,
+  formatMonthTitle,
+  formatWeekTitle,
+  keyParts,
+  type DateKey,
+} from "@/lib/date";
 import type { CalendarView } from "@/lib/settings";
 import type { Task } from "@/lib/types";
 
 type Props = {
-  /** 보고 있는 기준 날짜. 월간이면 이 날짜의 달, 주간이면 이 날짜가 속한 주. */
+  /**
+   * 보고 있는 기준 날짜. 월간이면 이 날짜의 달, 주간이면 이 날짜가 속한 주,
+   * 일간이면 이 날짜 하루. 주간에서는 '고른 날'을 겸한다.
+   */
   anchor: DateKey;
   view: CalendarView;
   today: DateKey;
@@ -23,7 +33,8 @@ type Props = {
   onToggleDone: (task: Task) => void;
   /** 좁은 화면에서 월간 칸을 눌렀을 때 여는 그날 목록. */
   onOpenDay: (key: DateKey) => void;
-  onAdd: () => void;
+  /** 주간에서 요일 줄의 날짜를 눌렀을 때. anchor가 그 날로 옮겨간다. */
+  onSelectDay: (key: DateKey) => void;
 };
 
 function ArrowButton({
@@ -53,6 +64,12 @@ function ArrowButton({
   );
 }
 
+const VIEW_LABEL: Record<CalendarView, string> = {
+  day: "일간",
+  week: "주간",
+  month: "월간",
+};
+
 function ViewToggle({
   value,
   onChange,
@@ -61,8 +78,9 @@ function ViewToggle({
   onChange: (v: CalendarView) => void;
 }) {
   return (
+    // 좁은 것부터 넓은 것 순서로 — 일간 · 주간 · 월간.
     <div className="flex rounded-full border border-line p-0.5">
-      {(["month", "week"] as const).map((v) => (
+      {(["day", "week", "month"] as const).map((v) => (
         <button
           key={v}
           type="button"
@@ -72,7 +90,7 @@ function ViewToggle({
             value === v ? "bg-accent text-white" : "text-ink-soft hover:text-ink"
           }`}
         >
-          {v === "month" ? "월간" : "주간"}
+          {VIEW_LABEL[v]}
         </button>
       ))}
     </div>
@@ -92,10 +110,15 @@ export default function Calendar({
   onSelect,
   onToggleDone,
   onOpenDay,
-  onAdd,
+  onSelectDay,
 }: Props) {
   const { y, m } = keyParts(anchor);
-  const title = view === "month" ? formatMonthTitle(y, m) : formatWeekTitle(anchor);
+  const title =
+    view === "month"
+      ? formatMonthTitle(y, m)
+      : view === "week"
+        ? formatWeekTitle(anchor)
+        : formatDayTitle(anchor);
 
   return (
     <section className="flex flex-col rounded-card border border-line bg-card shadow-card">
@@ -134,15 +157,13 @@ export default function Calendar({
             />
           </div>
 
-          <div className="order-3 flex w-full items-center gap-2 lg:ml-auto lg:w-auto">
+          {/*
+            일정 추가 버튼은 여기 없다. 날짜를 먼저 고르고 나서 추가하는 편이
+            자연스러워서, 추가는 날짜를 누르면 나오는 그날 목록에서만 연다
+            (월간은 시트, 주간·일간은 목록 머리의 '+ 추가').
+          */}
+          <div className="order-3 flex w-full items-center lg:ml-auto lg:w-auto">
             <ViewToggle value={view} onChange={onViewChange} />
-            <button
-              type="button"
-              onClick={onAdd}
-              className="ml-auto whitespace-nowrap rounded-full bg-accent px-3.5 py-2 text-[13px] font-medium text-white transition hover:bg-accent-deep lg:ml-0 lg:px-4"
-            >
-              + 일정 추가
-            </button>
           </div>
         </div>
       </header>
@@ -158,7 +179,7 @@ export default function Calendar({
           onToggleDone={onToggleDone}
           onOpenDay={onOpenDay}
         />
-      ) : (
+      ) : view === "week" ? (
         <WeekGrid
           anchor={anchor}
           today={today}
@@ -166,6 +187,16 @@ export default function Calendar({
           onAddOn={onAddOn}
           onSelect={onSelect}
           onToggleDone={onToggleDone}
+          onSelectDay={onSelectDay}
+        />
+      ) : (
+        <DayAgenda
+          dateKey={anchor}
+          tasks={tasksByDate.get(anchor) ?? []}
+          today={today}
+          onSelect={onSelect}
+          onToggleDone={onToggleDone}
+          onAdd={onAddOn}
         />
       )}
     </section>

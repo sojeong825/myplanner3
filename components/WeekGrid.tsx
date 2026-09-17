@@ -1,5 +1,7 @@
 "use client";
 
+import DayAgenda from "@/components/DayAgenda";
+import WeekStrip from "@/components/WeekStrip";
 import { buildWeek, formatTime, WEEKDAYS, type DateKey } from "@/lib/date";
 import { TaskCheck } from "@/lib/icons";
 import type { Task } from "@/lib/types";
@@ -13,13 +15,22 @@ type Props = {
   onSelect: (task: Task) => void;
   /** 아이콘 자리의 체크박스. 모달을 열지 않고 완료를 뒤집는다. */
   onToggleDone: (task: Task) => void;
+  /** 좁은 화면에서 요일 줄의 날짜를 눌렀을 때. 고른 날이 곧 anchor가 된다. */
+  onSelectDay: (key: DateKey) => void;
 };
 
 /**
- * 참고 레퍼런스는 시간대(10 Am 등) 세로축이 있는 event 캘린더지만,
- * 현재 Task에는 시간 정보가 없다(due_date는 날짜 단위). 그래서 시간축 없이
- * '날짜 컬럼 + 카드 목록' 형태로 만든다. due_date를 날짜+시간으로 넓힐 때
- * 시간축을 함께 검토하면 된다.
+ * 한 주.
+ *
+ * **좁은 화면과 넓은 화면이 아예 다른 모양이다.** 일곱 칸을 가로로 늘어놓는 격자는
+ * 폰에서 한 칸이 50px이라 제목이 한 글자도 안 들어간다. 그래서 폰에서는 가로 한 줄에
+ * 요일과 개수만 늘어놓고(WeekStrip), 고른 날의 제목은 그 아래 목록이 맡는다.
+ *
+ * 고른 날은 따로 들고 있지 않고 anchor를 그대로 쓴다. 요일 줄에서 날짜를 누르면
+ * anchor가 그 날로 옮겨가는데, 같은 주 안이라 화면에 보이는 주는 그대로다.
+ *
+ * 넓은 화면은 예전 그대로 — 날짜 컬럼 일곱 개에 카드를 쌓는다. 시간축(10 Am 등)이
+ * 없는 것은 Task가 날짜 단위라서다. due_date를 시간까지 넓힐 때 함께 검토하면 된다.
  */
 export default function WeekGrid({
   anchor,
@@ -28,12 +39,35 @@ export default function WeekGrid({
   onAddOn,
   onSelect,
   onToggleDone,
+  onSelectDay,
 }: Props) {
   const days = buildWeek(anchor);
 
   return (
-    // 좁은 화면에서 일곱 칸을 가로로 늘어놓으면 한 칸이 50px이다. 날짜별로 한 줄씩 쌓는다.
-    <div className="grid grid-cols-1 gap-px overflow-hidden rounded-b-card border-t border-line bg-line-soft lg:h-[528px] lg:grid-cols-7">
+    <>
+    {/* ── 폰 ── */}
+    <div className="lg:hidden">
+      <div className="border-t border-line">
+        <WeekStrip
+          anchor={anchor}
+          today={today}
+          tasksByDate={tasksByDate}
+          onSelect={onSelectDay}
+        />
+      </div>
+      <DayAgenda
+        dateKey={anchor}
+        tasks={tasksByDate.get(anchor) ?? []}
+        today={today}
+        showTitle
+        onSelect={onSelect}
+        onToggleDone={onToggleDone}
+        onAdd={onAddOn}
+      />
+    </div>
+
+    {/* ── 넓은 화면 ── */}
+    <div className="hidden gap-px overflow-hidden rounded-b-card border-t border-line bg-line-soft lg:grid lg:h-[528px] lg:grid-cols-7">
       {days.map((day) => {
         const dayTasks = tasksByDate.get(day.key) ?? [];
         const isToday = day.key === today;
@@ -124,5 +158,6 @@ export default function WeekGrid({
         );
       })}
     </div>
+    </>
   );
 }
