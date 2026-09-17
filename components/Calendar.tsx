@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import DayAgenda from "@/components/DayAgenda";
 import MonthGrid from "@/components/MonthGrid";
 import WeekGrid from "@/components/WeekGrid";
@@ -107,9 +108,31 @@ export default function Calendar({
   const { y, m } = keyParts(anchor);
   const title = view === "month" ? formatMonthTitle(y, m) : formatWeekTitle(anchor);
 
+  const agendaRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * 날짜를 고르고, 그날 목록이 화면 밖이면 보이는 데까지만 끌어올린다.
+   *
+   * 폰에서 달력 여섯 줄은 화면 높이를 거의 다 쓴다. 목록은 그 아래에 있어서,
+   * 날짜를 눌러도 목록이 바뀌는 것을 못 본다 — 아무 일도 안 일어난 것처럼 보인다.
+   *
+   * 목록을 화면 맨 위로 올려버리면 달력이 밀려나서 다음 날짜를 못 고른다.
+   * 그래서 목록 첫 줄이 화면 55% 지점에 오는 만큼만 움직인다 — 달력 아랫줄은
+   * 그대로 보이고 목록도 보인다. 이미 보이고 있으면 건드리지 않는다.
+   */
+  const selectDay = (key: DateKey) => {
+    onSelectDay(key);
+
+    const el = agendaRef.current;
+    if (!el) return;
+    const target = window.innerHeight * 0.55;
+    const gap = el.getBoundingClientRect().top - target;
+    if (gap > 0) window.scrollBy({ top: gap, behavior: "smooth" });
+  };
+
   return (
     <section className="flex flex-col rounded-card border border-line bg-card shadow-card">
-      <header className="px-4 py-4 lg:px-6 lg:py-5">
+      <header className="px-4 py-3 lg:px-6 lg:py-5">
         {/*
           폰에서는 '지금 어느 달인지'가 맨 먼저 읽혀야 해서 제목을 왼쪽 맨 앞에 두고,
           오늘·화살표를 오른쪽으로 보낸다. 보기 전환과 추가는 아랫줄로 내려간다.
@@ -166,7 +189,7 @@ export default function Calendar({
           onAddOn={onAddOn}
           onSelect={onSelect}
           onToggleDone={onToggleDone}
-          onSelectDay={onSelectDay}
+          onSelectDay={selectDay}
           selected={anchor}
         />
       ) : (
@@ -187,7 +210,7 @@ export default function Calendar({
         (주간은 WeekGrid가 요일 줄 아래에 같은 목록을 이미 달고 있다.)
       */}
       {view === "month" && (
-        <div className="lg:hidden">
+        <div ref={agendaRef} className="lg:hidden">
           <DayAgenda
             dateKey={anchor}
             tasks={tasksByDate.get(anchor) ?? []}

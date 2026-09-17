@@ -33,7 +33,8 @@ export default function DayAgenda({
   onAdd,
 }: Props) {
   return (
-    <div className="border-t border-line px-4 pb-5 pt-3">
+    // 달력과 다른 바탕색을 깔아 '여기부터는 고른 날 이야기'라는 것이 한눈에 보이게 한다.
+    <div className="rounded-b-card border-t border-line bg-canvas px-4 pb-5 pt-3">
       <div className="flex items-center gap-2">
         {showTitle && (
           <h3 className="text-[15px] font-medium text-ink">{formatDayTitle(dateKey)}</h3>
