@@ -31,6 +31,8 @@ type Props = {
    * anchor가 그 날로 옮겨가고, 달력 아래 목록이 그날 것으로 바뀐다.
    */
   onSelectDay: (key: DateKey) => void;
+  /** 날짜 없이 여는 추가. 넓은 화면에만 있는 버튼이다. */
+  onAdd: () => void;
 };
 
 function ArrowButton({
@@ -104,6 +106,7 @@ export default function Calendar({
   onSelect,
   onToggleDone,
   onSelectDay,
+  onAdd,
 }: Props) {
   const { y, m } = keyParts(anchor);
   const title = view === "month" ? formatMonthTitle(y, m) : formatWeekTitle(anchor);
@@ -168,14 +171,21 @@ export default function Calendar({
           </div>
 
           {/*
-            일정 추가 버튼은 여기 없다. 날짜를 먼저 고르고 나서 추가하는 편이
-            자연스러워서, 추가는 달력 아래 그날 목록의 '+ 추가'에서만 연다.
+            이 줄은 통째로 넓은 화면 전용이다.
 
-            보기 전환도 폰에서는 여기 없다 — 달력 윗부분에 버튼이 늘어날수록 정작
-            달력이 안 보인다. 폰에서는 앱 머리줄로 올라갔다.
+            폰에서는 달력 윗부분에 버튼이 늘어날수록 정작 달력이 안 보여서, 보기 전환은
+            앱 머리줄로 올리고 추가는 달력 아래 그날 목록의 '+ 추가'에 맡겼다.
+            넓은 화면은 자리가 남으니 둘 다 여기 그대로 둔다.
           */}
-          <div className="order-3 hidden w-full items-center lg:ml-auto lg:flex lg:w-auto">
+          <div className="order-3 hidden w-full items-center gap-2 lg:ml-auto lg:flex lg:w-auto">
             <ViewToggle value={view} onChange={onViewChange} />
+            <button
+              type="button"
+              onClick={onAdd}
+              className="whitespace-nowrap rounded-full bg-accent px-4 py-2 text-[13px] font-medium text-white transition hover:bg-accent-deep"
+            >
+              + 일정 추가
+            </button>
           </div>
         </div>
       </header>

@@ -755,6 +755,8 @@ export default function Page() {
                 onToggleDone={toggleTask}
                 // 폰에서 고른 날. 달력 아래 목록이 이 날짜 것으로 바뀐다.
                 onSelectDay={setAnchor}
+                // 날짜 없이 여는 추가. 달력 칸을 누르면 그 날짜가 붙는다.
+                onAdd={() => openAdd(null)}
               />
             </div>
 
