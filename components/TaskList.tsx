@@ -95,7 +95,7 @@ function Row({
         className={
           task.is_starred
             ? "text-accent"
-            : "text-ink-faint opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+            : "text-ink-faint focus-visible:opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
         }
       />
     </li>

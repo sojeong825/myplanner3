@@ -5,6 +5,7 @@ import AuthModal from "@/components/AuthModal";
 import BannerCard from "@/components/BannerCard";
 import Calendar from "@/components/Calendar";
 import CounterCard from "@/components/CounterCard";
+import DaySheet from "@/components/DaySheet";
 import MergePrompt from "@/components/MergePrompt";
 import ScheduleCard from "@/components/ScheduleCard";
 import SettingsModal from "@/components/SettingsModal";
@@ -112,6 +113,13 @@ export default function Page() {
   const [selectedDate, setSelectedDate] = useState<DateKey | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  /** 좁은 화면에서 사이드바를 서랍으로 열었는지. 넓은 화면에서는 쓰이지 않는다. */
+  const [navOpen, setNavOpen] = useState(false);
+  /**
+   * 좁은 화면에서 달력 칸을 눌러 연 '그날 목록'. null이면 닫힘.
+   * 넓은 화면에서는 칸에 제목이 그대로 보이므로 이 시트가 뜰 일이 없다.
+   */
+  const [daySheetKey, setDaySheetKey] = useState<DateKey | null>(null);
   /** 로그인했는데 서버에도 로컬에도 데이터가 있어 합칠지 물어야 하는 상태 */
   const [mergeCount, setMergeCount] = useState<number | null>(null);
 
@@ -499,6 +507,8 @@ export default function Page() {
   return (
     <div className="flex min-h-screen">
       <Sidebar
+        open={navOpen}
+        onClose={() => setNavOpen(false)}
         pendingCount={pending.length}
         dueTodayCount={dueTodayCount}
         doneCount={done.length}
@@ -526,98 +536,152 @@ export default function Page() {
         onSignIn={() => setAuthOpen(true)}
       />
 
-      <main className="flex min-w-0 flex-1 items-start gap-5 p-6">
-        <div className="flex min-w-0 flex-1 flex-col gap-5">
-          {error && (
-            <div className="flex items-center gap-3 rounded-card border border-soft-deep bg-soft px-4 py-3 text-[12px] text-accent-deep">
-              <span className="min-w-0 flex-1">{error}</span>
-              <button
-                type="button"
-                onClick={() => setError(null)}
-                className="shrink-0 underline underline-offset-2"
-              >
-                닫기
-              </button>
-            </div>
-          )}
-
-          <TaskSearch tasks={tasks} today={today} onSelect={openView} />
-
-          {/* 배너는 180px 고정. 카운터는 편집할 때만 더 커지면 되므로 items-start. */}
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-start gap-5">
-            <CounterCard
-              label={settings.counter_label}
-              date={settings.counter_date}
-              today={today}
-              onSave={(counter_label, counter_date) =>
-                void saveSetting({ counter_label, counter_date })
-              }
-            />
-            <BannerCard
-              image={settings.banner_image}
-              x={settings.banner_pos_x}
-              y={settings.banner_pos_y}
-              onSave={(next) =>
-                update({
-                  ...(next.image !== undefined && { banner_image: next.image }),
-                  ...(next.x !== undefined && { banner_pos_x: next.x }),
-                  ...(next.y !== undefined && { banner_pos_y: next.y }),
-                })
-              }
-            />
-          </div>
-
-          <Calendar
-            anchor={anchor}
-            view={view}
-            today={today}
-            tasksByDate={tasksByDate}
-            // 칸을 누르면 그 날짜로 추가 모달이 곧장 열린다.
-            onAddOn={openAdd}
-            onPrev={() => step(-1)}
-            onNext={() => step(1)}
-            onToday={() => setAnchor(todayKey())}
-            onViewChange={(next) => void saveSetting({ calendar_view: next })}
-            onSelect={openView}
-            onToggleDone={toggleTask}
-            // 헤더 버튼은 날짜 없이 연다. 달력 칸을 눌러야 날짜가 붙는다.
-            onAdd={() => openAdd(null)}
-          />
-        </div>
-
+      <div className="flex min-w-0 flex-1 flex-col">
         {/*
-          가운데가 길어져도 계속 보이도록 붙여둔다.
-          overflow-hidden은 필수다. 안쪽 목록이 max-h를 넘긴 만큼은 카드 안에서 잘려
-          보이지 않는데도 문서 스크롤 높이에는 그대로 더해져서, 목록이 길어지면
-          화면에 아무것도 없는 여백이 아래로 길게 생긴다.
+          좁은 화면에만 있는 머리줄. 사이드바가 서랍으로 접혀 있으니 여는 손잡이와
+          플래너 이름, 그리고 설정으로 가는 길만 둔다.
         */}
-        <div className="sticky top-6 flex max-h-[calc(100vh-3rem)] w-[300px] shrink-0 flex-col gap-5 overflow-hidden">
-          {loading ? (
-            <div className="h-40 animate-pulse rounded-card border border-line bg-card" />
-          ) : (
-            <ScheduleCard
-              upcoming={upcoming}
-              overdue={overdue}
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-card px-4 py-3 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setNavOpen(true)}
+            aria-label="메뉴 열기"
+            className="grid size-9 shrink-0 place-items-center rounded-full text-ink-soft transition hover:bg-soft hover:text-ink"
+          >
+            <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
+            </svg>
+          </button>
+
+          <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-ink">
+            {settings.planner_name}
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="설정"
+            className="grid size-9 shrink-0 place-items-center rounded-full text-ink-soft transition hover:bg-soft hover:text-ink"
+          >
+            <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <circle cx="12" cy="12" r="3.2" />
+              <path d="M19.4 14.6a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5v.2a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H2a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H8a1.6 1.6 0 0 0 1-1.5V2a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V8a1.6 1.6 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </header>
+
+        {/* 좁은 화면에서는 달력 아래로 오른쪽 단이 내려와 한 줄로 쌓인다. */}
+        <main className="flex min-w-0 flex-1 flex-col gap-5 p-4 lg:flex-row lg:items-start lg:p-6">
+          <div className="flex min-w-0 flex-1 flex-col gap-5">
+            {error && (
+              <div className="flex items-center gap-3 rounded-card border border-soft-deep bg-soft px-4 py-3 text-[12px] text-accent-deep">
+                <span className="min-w-0 flex-1">{error}</span>
+                <button
+                  type="button"
+                  onClick={() => setError(null)}
+                  className="shrink-0 underline underline-offset-2"
+                >
+                  닫기
+                </button>
+              </div>
+            )}
+  
+            <TaskSearch tasks={tasks} today={today} onSelect={openView} />
+  
+            {/* 배너는 180px 고정. 카운터는 편집할 때만 더 커지면 되므로 items-start. */}
+            <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+              <CounterCard
+                label={settings.counter_label}
+                date={settings.counter_date}
+                today={today}
+                onSave={(counter_label, counter_date) =>
+                  void saveSetting({ counter_label, counter_date })
+                }
+              />
+              <BannerCard
+                image={settings.banner_image}
+                x={settings.banner_pos_x}
+                y={settings.banner_pos_y}
+                onSave={(next) =>
+                  update({
+                    ...(next.image !== undefined && { banner_image: next.image }),
+                    ...(next.x !== undefined && { banner_pos_x: next.x }),
+                    ...(next.y !== undefined && { banner_pos_y: next.y }),
+                  })
+                }
+              />
+            </div>
+  
+            <Calendar
+              anchor={anchor}
+              view={view}
               today={today}
+              tasksByDate={tasksByDate}
+              // 칸을 누르면 그 날짜로 추가 모달이 곧장 열린다.
+              onAddOn={openAdd}
+              onPrev={() => step(-1)}
+              onNext={() => step(1)}
+              onToday={() => setAnchor(todayKey())}
+              onViewChange={(next) => void saveSetting({ calendar_view: next })}
               onSelect={openView}
               onToggleDone={toggleTask}
-            />
-          )}
-
-          {loading ? (
-            <div className="flex-1 animate-pulse rounded-card border border-line bg-card" />
-          ) : (
-            <TaskList
-              pending={pending}
-              done={done}
-              onToggle={toggleTask}
-              onToggleStar={toggleStar}
-              onSelect={openView}
+              onOpenDay={setDaySheetKey}
+              // 헤더 버튼은 날짜 없이 연다. 달력 칸을 눌러야 날짜가 붙는다.
               onAdd={() => openAdd(null)}
             />
-          )}
-        </div>
-      </main>
+          </div>
+  
+          {/*
+            가운데가 길어져도 계속 보이도록 붙여둔다.
+            overflow-hidden은 필수다. 안쪽 목록이 max-h를 넘긴 만큼은 카드 안에서 잘려
+            보이지 않는데도 문서 스크롤 높이에는 그대로 더해져서, 목록이 길어지면
+            화면에 아무것도 없는 여백이 아래로 길게 생긴다.
+          */}
+          <div className="flex w-full shrink-0 flex-col gap-5 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:w-[300px] lg:overflow-hidden">
+            {loading ? (
+              <div className="h-40 animate-pulse rounded-card border border-line bg-card" />
+            ) : (
+              <ScheduleCard
+                upcoming={upcoming}
+                overdue={overdue}
+                today={today}
+                onSelect={openView}
+                onToggleDone={toggleTask}
+              />
+            )}
+  
+            {loading ? (
+              <div className="h-64 flex-1 animate-pulse rounded-card border border-line bg-card lg:h-auto" />
+            ) : (
+              <TaskList
+                pending={pending}
+                done={done}
+                onToggle={toggleTask}
+                onToggleStar={toggleStar}
+                onSelect={openView}
+                onAdd={() => openAdd(null)}
+              />
+            )}
+          </div>
+        </main>
+      </div>
+
+      {/* 좁은 화면에서 달력 칸을 눌렀을 때 아래에서 올라오는 그날 목록. */}
+      <DaySheet
+        dateKey={daySheetKey}
+        tasks={daySheetKey ? (tasksByDate.get(daySheetKey) ?? []) : []}
+        today={today}
+        onClose={() => setDaySheetKey(null)}
+        onSelect={openView}
+        onToggleDone={toggleTask}
+        onAdd={(key) => {
+          setDaySheetKey(null);
+          openAdd(key);
+        }}
+      />
 
       <TaskDetail
         task={viewingTask}

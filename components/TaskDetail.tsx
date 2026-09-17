@@ -133,7 +133,7 @@ export default function TaskDetail({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-ink/20 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/20 p-4 backdrop-blur-[2px]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -142,7 +142,7 @@ export default function TaskDetail({
         role="dialog"
         aria-modal="true"
         aria-labelledby="task-detail-title"
-        className="w-full max-w-[380px] rounded-2xl border border-line bg-card p-6 shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)]"
+        className="my-auto w-full max-w-[380px] rounded-2xl border border-line bg-card p-5 shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)] sm:p-6"
       >
         <div className="flex items-start gap-2.5">
           <TaskIcon icon={task.icon} done={task.is_done} className="mt-0.5 text-[20px]" />

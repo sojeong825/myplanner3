@@ -1,7 +1,8 @@
 "use client";
 
 import { buildMonthGrid, formatTime, WEEKDAYS, type DateKey } from "@/lib/date";
-import { TaskCheck } from "@/lib/icons";
+import { TaskCheck, TaskIcon } from "@/lib/icons";
+import { DESKTOP, useMediaQuery } from "@/lib/useMediaQuery";
 import type { Task } from "@/lib/types";
 
 type Props = {
@@ -14,6 +15,8 @@ type Props = {
   onSelect: (task: Task) => void;
   /** 아이콘 자리의 체크박스. 모달을 열지 않고 완료를 뒤집는다. */
   onToggleDone: (task: Task) => void;
+  /** 좁은 화면에서 칸을 눌렀을 때. 제목이 들어가지 않으니 그날 목록을 대신 연다. */
+  onOpenDay: (key: DateKey) => void;
 };
 
 export default function MonthGrid({
@@ -24,8 +27,15 @@ export default function MonthGrid({
   onAddOn,
   onSelect,
   onToggleDone,
+  onOpenDay,
 }: Props) {
   const cells = buildMonthGrid(year, month);
+  /**
+   * 칸을 눌렀을 때 무엇이 열리는가. 이것만은 CSS로 가를 수 없어서 폭을 직접 본다.
+   * 넓은 화면은 칸 안에 제목이 다 보이니 곧장 '추가'로 가고, 좁은 화면은 점만
+   * 찍혀 있으니 먼저 그날 목록을 보여준다.
+   */
+  const desktop = useMediaQuery(DESKTOP);
 
   return (
     <>
@@ -33,7 +43,7 @@ export default function MonthGrid({
         {WEEKDAYS.map((w, i) => (
           <div
             key={w}
-            className={`py-2.5 text-center text-[13px] ${
+            className={`py-2 text-center text-[12px] lg:py-2.5 lg:text-[13px] ${
               i === 0 ? "text-accent-deep" : "text-ink-soft"
             }`}
           >
@@ -56,22 +66,23 @@ export default function MonthGrid({
               key={cell.key}
               role="button"
               tabIndex={0}
-              aria-label={`${cell.day}일에 할 일 추가`}
-              onClick={() => onAddOn(cell.key)}
+              aria-label={desktop ? `${cell.day}일에 할 일 추가` : `${cell.day}일 일정 보기`}
+              onClick={() => (desktop ? onAddOn(cell.key) : onOpenDay(cell.key))}
               onKeyDown={(e) => {
                 if (e.key !== "Enter" && e.key !== " ") return;
                 e.preventDefault();
-                onAddOn(cell.key);
+                if (desktop) onAddOn(cell.key);
+                else onOpenDay(cell.key);
               }}
-              className={`group/cell relative flex min-h-[96px] cursor-pointer flex-col gap-1 overflow-hidden px-2 pb-1.5 pt-2 transition hover:bg-canvas ${
+              className={`group/cell relative flex min-h-[62px] cursor-pointer flex-col gap-1 overflow-hidden px-1 pb-1 pt-1.5 transition hover:bg-canvas lg:min-h-[96px] lg:px-2 lg:pb-1.5 lg:pt-2 ${
                 isToday ? "bg-soft/50" : "bg-card"
               } ${cell.inMonth ? "" : "opacity-45"}`}
             >
               <span
                 className={
                   isToday
-                    ? "grid size-6 shrink-0 place-items-center self-start rounded-full bg-accent text-[12px] font-medium text-white"
-                    : `self-start px-0.5 text-[13px] ${
+                    ? "grid size-5 shrink-0 place-items-center self-start rounded-full bg-accent text-[11px] font-medium text-white lg:size-6 lg:text-[12px]"
+                    : `self-start px-0.5 text-[12px] lg:text-[13px] ${
                         cell.weekday === 0
                           ? "text-accent-deep"
                           : cell.inMonth
@@ -87,11 +98,31 @@ export default function MonthGrid({
                 누를 수 있다는 걸 알려주는 표시. 칸 전체가 버튼이라 이건 장식일 뿐이라
                 pointer-events-none으로 두고 클릭은 칸이 받는다.
               */}
-              <span className="pointer-events-none absolute right-1.5 top-1.5 text-[13px] leading-none text-ink-faint opacity-0 transition group-hover/cell:opacity-100">
+              <span className="pointer-events-none absolute right-1.5 top-1.5 hidden text-[13px] leading-none text-ink-faint opacity-0 transition group-hover/cell:opacity-100 lg:block">
                 +
               </span>
 
-              <div className="flex min-h-0 flex-col gap-0.5 overflow-hidden">
+              {/*
+                좁은 화면에서는 제목을 넣을 자리가 없다(칸 하나가 가로 50px 남짓).
+                이모지만 점처럼 찍어두고, 읽고 누르는 일은 칸을 눌러 여는 그날 목록에 맡긴다.
+              */}
+              <div className="flex flex-wrap items-center gap-0.5 lg:hidden">
+                {dayTasks.slice(0, 4).map((task) => (
+                  <TaskIcon
+                    key={task.id}
+                    icon={task.icon}
+                    done={task.is_done}
+                    className="text-[11px]"
+                  />
+                ))}
+                {dayTasks.length > 4 && (
+                  <span className="text-[9px] leading-none text-ink-faint">
+                    +{dayTasks.length - 4}
+                  </span>
+                )}
+              </div>
+
+              <div className="hidden min-h-0 flex-col gap-0.5 overflow-hidden lg:flex">
                 {dayTasks.map((task) => (
                   // 안에 체크박스 버튼이 들어가므로 항목 자체는 버튼이 될 수 없다.
                   <div

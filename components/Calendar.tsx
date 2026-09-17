@@ -21,6 +21,8 @@ type Props = {
   onViewChange: (view: CalendarView) => void;
   onSelect: (task: Task) => void;
   onToggleDone: (task: Task) => void;
+  /** 좁은 화면에서 월간 칸을 눌렀을 때 여는 그날 목록. */
+  onOpenDay: (key: DateKey) => void;
   onAdd: () => void;
 };
 
@@ -89,6 +91,7 @@ export default function Calendar({
   onViewChange,
   onSelect,
   onToggleDone,
+  onOpenDay,
   onAdd,
 }: Props) {
   const { y, m } = keyParts(anchor);
@@ -96,8 +99,8 @@ export default function Calendar({
 
   return (
     <section className="flex flex-col rounded-card border border-line bg-card shadow-card">
-      <header className="px-6 py-5">
-        <div className="flex items-center gap-3">
+      <header className="px-4 py-4 lg:px-6 lg:py-5">
+        <div className="flex flex-wrap items-center gap-2 lg:gap-3">
           <button
             type="button"
             onClick={onToday}
@@ -116,14 +119,14 @@ export default function Calendar({
             label={view === "month" ? "다음 달" : "다음 주"}
           />
 
-          <h2 className="ml-1 whitespace-nowrap text-[19px] font-medium">{title}</h2>
+          <h2 className="ml-1 whitespace-nowrap text-[16px] font-medium lg:text-[19px]">{title}</h2>
 
           <div className="ml-auto flex items-center gap-2">
             <ViewToggle value={view} onChange={onViewChange} />
             <button
               type="button"
               onClick={onAdd}
-              className="rounded-full bg-accent px-4 py-2 text-[13px] font-medium text-white transition hover:bg-accent-deep"
+              className="whitespace-nowrap rounded-full bg-accent px-3.5 py-2 text-[13px] font-medium text-white transition hover:bg-accent-deep lg:px-4"
             >
               + 일정 추가
             </button>
@@ -140,6 +143,7 @@ export default function Calendar({
           onAddOn={onAddOn}
           onSelect={onSelect}
           onToggleDone={onToggleDone}
+          onOpenDay={onOpenDay}
         />
       ) : (
         <WeekGrid

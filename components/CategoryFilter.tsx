@@ -142,7 +142,7 @@ export default function CategoryFilter({
                   onClick={() => setConfirming(c.id)}
                   aria-label={`${c.name} 분류 지우기`}
                   title="분류 지우기"
-                  className="mr-1 grid size-6 shrink-0 place-items-center rounded-full text-ink-faint opacity-0 transition focus-visible:opacity-100 hover:text-danger group-hover:opacity-100"
+                  className="mr-1 grid size-6 shrink-0 place-items-center rounded-full text-ink-faint transition focus-visible:opacity-100 hover:text-danger lg:opacity-0 lg:group-hover:opacity-100"
                 >
                   <svg viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.8">
                     <path

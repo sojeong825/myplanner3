@@ -81,7 +81,8 @@ export default function EmojiPicker({ value, isAuto, onPick, onAuto, onClose }: 
       role="dialog"
       aria-label="아이콘 고르기"
       // 모달 안에 뜨는 팝오버라 z-index를 모달보다 높게 둔다.
-      className="absolute left-0 top-[calc(100%+6px)] z-[70] w-[320px] overflow-hidden rounded-xl border border-line bg-card shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)]"
+      // 폰에서는 320px이 화면을 넘는다. 모달 여백만큼 빼고 화면 안에 들어오게 둔다.
+      className="absolute left-0 top-[calc(100%+6px)] z-[70] w-[min(320px,calc(100vw-4rem))] overflow-hidden rounded-xl border border-line bg-card shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)]"
     >
       {/* ── 검색 ── */}
       <div className="flex items-center gap-2 border-b border-line px-3 py-2.5">

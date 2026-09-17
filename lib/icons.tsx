@@ -251,6 +251,9 @@ export function TrashButton({
  * 그렇다고 좁은 칸에 체크박스 자리를 늘 비워두면 아이콘과 나란히 두 칸을 먹는다.
  * 그래서 같은 자리에 겹쳐두고, 마우스를 올린 동안에만 체크박스가 보인다.
  *
+ * 좁은 화면에서는 겹치지 않고 아이콘 **옆에** 늘 보인다. 손가락에는 hover가 없어서
+ * 숨겨두면 영영 못 찾는다.
+ *
  * 쓰는 쪽 항목에 `group/task`가 있어야 하고, 그 항목은 <button>이면 안 된다 —
  * 버튼 안에 버튼을 넣을 수 없다. 달력 칸과 같은 방식으로 div role="button"을 쓸 것.
  */
@@ -270,12 +273,7 @@ export function TaskCheck({
   const label = done ? "완료 취소" : "완료 표시";
 
   return (
-    <span className="relative inline-flex shrink-0">
-      <TaskIcon
-        icon={icon}
-        done={done}
-        className={`${iconClassName} transition group-hover/task:opacity-0`}
-      />
+    <span className="relative inline-flex shrink-0 items-center gap-1.5 lg:gap-0">
       <button
         type="button"
         // 항목을 누르면 모달이 열린다. 체크는 거기까지 올라가면 안 된다.
@@ -285,7 +283,8 @@ export function TaskCheck({
         }}
         aria-label={label}
         title={label}
-        className="absolute inset-0 grid cursor-pointer place-items-center opacity-0 transition group-hover/task:opacity-100"
+        // 좁은 화면: 아이콘 옆에 그대로 놓인다. 넓은 화면: 아이콘 위에 겹쳐두고 hover 때만.
+        className="grid shrink-0 cursor-pointer place-items-center transition lg:absolute lg:inset-0 lg:opacity-0 lg:group-hover/task:opacity-100"
       >
         <span
           className={`grid ${boxClassName} place-items-center rounded-[5px] border transition ${
@@ -305,6 +304,11 @@ export function TaskCheck({
           )}
         </span>
       </button>
+      <TaskIcon
+        icon={icon}
+        done={done}
+        className={`${iconClassName} transition lg:group-hover/task:opacity-0`}
+      />
     </span>
   );
 }

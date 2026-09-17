@@ -96,7 +96,7 @@ export default function BannerCard({ image, x, y, onSave }: Props) {
 
       {/* 조정 중이 아닐 때만 나오는 버튼들. 조정 중에는 아래 저장/취소로 바뀐다. */}
       {image && !editing && (
-        <div className="absolute right-3 top-3 flex gap-1.5 opacity-0 transition group-hover:opacity-100">
+        <div className="absolute right-3 top-3 flex gap-1.5 transition lg:opacity-0 lg:group-hover:opacity-100">
           <button
             type="button"
             onClick={() => setDraft({ x, y })}

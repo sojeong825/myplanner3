@@ -32,7 +32,8 @@ export default function WeekGrid({
   const days = buildWeek(anchor);
 
   return (
-    <div className="grid h-[528px] grid-cols-7 gap-px overflow-hidden rounded-b-card border-t border-line bg-line-soft">
+    // 좁은 화면에서 일곱 칸을 가로로 늘어놓으면 한 칸이 50px이다. 날짜별로 한 줄씩 쌓는다.
+    <div className="grid grid-cols-1 gap-px overflow-hidden rounded-b-card border-t border-line bg-line-soft lg:h-[528px] lg:grid-cols-7">
       {days.map((day) => {
         const dayTasks = tasksByDate.get(day.key) ?? [];
         const isToday = day.key === today;
@@ -54,7 +55,7 @@ export default function WeekGrid({
               isToday ? "bg-soft/50" : "bg-card"
             }`}
           >
-            <div className="flex flex-col items-center gap-1 py-3">
+            <div className="flex flex-row items-center gap-2 px-3 pb-1 pt-3 lg:flex-col lg:gap-1 lg:px-0 lg:py-3">
               <span
                 className={`text-[13px] ${
                   day.weekday === 0 ? "text-accent-deep" : "text-ink-soft"
@@ -73,7 +74,7 @@ export default function WeekGrid({
               </span>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-1.5 pb-2">
+            <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-3 pb-3 lg:px-1.5 lg:pb-2">
               {dayTasks.map((task) => (
                 // 안에 체크박스 버튼이 들어가므로 항목 자체는 버튼이 될 수 없다.
                 <div

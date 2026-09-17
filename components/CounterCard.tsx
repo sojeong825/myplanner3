@@ -100,7 +100,7 @@ export default function CounterCard({ label, date, today, onSave }: Props) {
         type="button"
         onClick={() => setEditing(true)}
         aria-label="카운터 설정"
-        className="absolute right-3 top-3 grid size-6 place-items-center rounded-full bg-card/85 text-ink-soft opacity-0 transition group-hover:opacity-100 hover:text-ink"
+        className="absolute right-3 top-3 grid size-6 place-items-center rounded-full bg-card/85 text-ink-soft transition hover:text-ink lg:opacity-0 lg:group-hover:opacity-100"
       >
         <svg viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M4 20h4L19 9a2.5 2.5 0 0 0-3.5-3.5L4.5 16.5z" strokeLinecap="round" strokeLinejoin="round" />

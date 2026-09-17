@@ -145,7 +145,7 @@ export default function TaskModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="task-modal-title"
-        className="my-auto w-full max-w-[380px] rounded-2xl border border-line bg-card p-6 shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)]"
+        className="my-auto w-full max-w-[380px] rounded-2xl border border-line bg-card p-5 shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)] sm:p-6"
       >
         <div className="flex items-center gap-1">
           <h2 id="task-modal-title" className="mr-auto text-[16px] font-medium">
