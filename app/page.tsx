@@ -631,7 +631,10 @@ export default function Page() {
           </button>
         </header>
 
-        {/* 폰 검색. 머리줄을 덮고 내려와서 자판이 바로 올라온다. */}
+        {/*
+          폰 검색. 머리줄을 덮고 내려와서 자판이 바로 올라온다.
+          따로 취소 버튼은 두지 않는다 — 입력칸 폭을 줄이기만 했다. 닫을 때는 아래 어두운 곳을 누른다.
+        */}
         {searchOpen && (
           <div className="fixed inset-0 z-40 lg:hidden">
             <button
@@ -652,13 +655,6 @@ export default function Page() {
                   }}
                 />
               </div>
-              <button
-                type="button"
-                onClick={() => setSearchOpen(false)}
-                className="shrink-0 px-1 text-[13px] text-ink-soft"
-              >
-                취소
-              </button>
             </div>
           </div>
         )}
