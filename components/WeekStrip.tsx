@@ -24,7 +24,10 @@ export default function WeekStrip({ anchor, today, tasksByDate, onSelect }: Prop
   return (
     <div className="grid grid-cols-7 gap-1 px-2 py-3">
       {days.map((day) => {
-        const count = (tasksByDate.get(day.key) ?? []).filter((t) => !t.is_done).length;
+        const all = tasksByDate.get(day.key) ?? [];
+        const count = all.filter((t) => !t.is_done).length;
+        // 일정이 있었고 그걸 다 끝낸 날. 0으로 비워두면 처음부터 없던 날과 똑같아 보인다.
+        const cleared = all.length > 0 && count === 0;
         const picked = day.key === anchor;
         const isToday = day.key === today;
 
@@ -54,10 +57,27 @@ export default function WeekStrip({ anchor, today, tasksByDate, onSelect }: Prop
                   ? "bg-accent text-white"
                   : count > 0
                     ? "bg-soft-deep text-ink"
-                    : "bg-soft/60 text-ink-faint"
+                    : cleared
+                      ? "bg-soft text-accent-deep"
+                      : "bg-soft/60 text-ink-faint"
               }`}
             >
-              {count > 0 ? count : ""}
+              {count > 0 ? (
+                count
+              ) : cleared ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-label="다 끝냈어요"
+                  className="size-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                >
+                  <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ) : (
+                ""
+              )}
             </span>
 
             <span

@@ -3,10 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AuthModal from "@/components/AuthModal";
 import BannerCard from "@/components/BannerCard";
-import Calendar from "@/components/Calendar";
+import Calendar, { VIEW_LABEL } from "@/components/Calendar";
 import CategoryMenu from "@/components/CategoryMenu";
 import CounterCard from "@/components/CounterCard";
-import DaySheet from "@/components/DaySheet";
 import MergePrompt from "@/components/MergePrompt";
 import ScheduleCard from "@/components/ScheduleCard";
 import SettingsModal from "@/components/SettingsModal";
@@ -152,11 +151,6 @@ export default function Page() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   /** 좁은 화면에서 사이드바를 서랍으로 열었는지. 넓은 화면에서는 쓰이지 않는다. */
   const [navOpen, setNavOpen] = useState(false);
-  /**
-   * 좁은 화면에서 달력 칸을 눌러 연 '그날 목록'. null이면 닫힘.
-   * 넓은 화면에서는 칸에 제목이 그대로 보이므로 이 시트가 뜰 일이 없다.
-   */
-  const [daySheetKey, setDaySheetKey] = useState<DateKey | null>(null);
   /**
    * 폰에서 아래 탭으로 오가는 화면. 한 화면에 달력과 할 일을 같이 쌓으면 달력이
    * 작아지고 스크롤만 길어진다. 넓은 화면에서는 둘 다 한꺼번에 보이므로 쓰이지 않는다.
@@ -539,13 +533,7 @@ export default function Page() {
   const step = useCallback(
     (delta: number) =>
       setAnchor((a) =>
-        a === null
-          ? a
-          : view === "month"
-            ? addMonthsKey(a, delta)
-            : view === "day"
-              ? addDays(a, delta)
-              : addDays(a, delta * 7),
+        a === null ? a : view === "month" ? addMonthsKey(a, delta) : addDays(a, delta * 7),
       ),
     [view],
   );
@@ -627,19 +615,19 @@ export default function Page() {
             </svg>
           </button>
 
+          {/*
+            보기 전환. 둘뿐이라 누르면 곧장 반대쪽으로 넘어간다 — 달력 윗부분에
+            토글을 얹는 대신 여기로 올렸다. 설정은 서랍(☰)에 있다.
+          */}
           <button
             type="button"
-            onClick={() => setSettingsOpen(true)}
-            aria-label="설정"
-            className="grid size-9 shrink-0 place-items-center rounded-full text-ink-soft transition hover:bg-soft hover:text-ink"
+            onClick={() =>
+              void saveSetting({ calendar_view: view === "month" ? "week" : "month" })
+            }
+            aria-label={`${VIEW_LABEL[view === "month" ? "week" : "month"]}으로 보기`}
+            className="shrink-0 rounded-full border border-line px-3 py-1.5 text-[12px] text-ink-soft transition active:bg-soft"
           >
-            <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6">
-              <circle cx="12" cy="12" r="3.2" />
-              <path d="M19.4 14.6a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5v.2a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H2a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H8a1.6 1.6 0 0 0 1-1.5V2a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V8a1.6 1.6 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            {VIEW_LABEL[view]}
           </button>
         </header>
 
@@ -744,7 +732,7 @@ export default function Page() {
                   upcoming={upcoming}
                   overdue={overdue}
                   today={today}
-                  limit={5}
+                  limit={3}
                   onSelect={openView}
                   onToggleDone={toggleTask}
                 />
@@ -765,8 +753,7 @@ export default function Page() {
                 onViewChange={(next) => void saveSetting({ calendar_view: next })}
                 onSelect={openView}
                 onToggleDone={toggleTask}
-                onOpenDay={setDaySheetKey}
-                // 주간 요일 줄에서 고른 날. 같은 주 안이라 보이는 주는 그대로다.
+                // 폰에서 고른 날. 달력 아래 목록이 이 날짜 것으로 바뀐다.
                 onSelectDay={setAnchor}
               />
             </div>
@@ -858,20 +845,6 @@ export default function Page() {
           </MobileTab>
         </nav>
       </div>
-
-      {/* 좁은 화면에서 달력 칸을 눌렀을 때 아래에서 올라오는 그날 목록. */}
-      <DaySheet
-        dateKey={daySheetKey}
-        tasks={daySheetKey ? (tasksByDate.get(daySheetKey) ?? []) : []}
-        today={today}
-        onClose={() => setDaySheetKey(null)}
-        onSelect={openView}
-        onToggleDone={toggleTask}
-        onAdd={(key) => {
-          setDaySheetKey(null);
-          openAdd(key);
-        }}
-      />
 
       <TaskDetail
         task={viewingTask}

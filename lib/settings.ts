@@ -21,7 +21,7 @@ export const THEMES = [
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];
-export type CalendarView = "month" | "week" | "day";
+export type CalendarView = "month" | "week";
 
 export const COUNTER_LABEL_MAX = 20;
 export const PLANNER_NAME_MAX = 20;
@@ -118,8 +118,9 @@ export function coerceSettings(raw: unknown): Settings {
     profile_pos_y: asPercent(v.profile_pos_y),
     theme: THEME_IDS.includes(v.theme as string) ? (v.theme as ThemeId) : DEFAULT_SETTINGS.theme,
     font: isFontId(v.font) ? v.font : DEFAULT_FONT,
+    // 한때 'day'도 있었다. 그걸 고른 채로 남아 있는 설정은 기본값(월간)으로 떨어진다.
     calendar_view:
-      v.calendar_view === "week" || v.calendar_view === "month" || v.calendar_view === "day"
+      v.calendar_view === "week" || v.calendar_view === "month"
         ? v.calendar_view
         : DEFAULT_SETTINGS.calendar_view,
     banner_image: asDataUrl(v.banner_image),

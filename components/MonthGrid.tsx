@@ -1,6 +1,13 @@
 "use client";
 
-import { buildMonthGrid, formatTime, keyParts, WEEKDAYS, type DateKey } from "@/lib/date";
+import {
+  buildMonthGrid,
+  formatTime,
+  keyParts,
+  WEEKDAYS,
+  weekdayOf,
+  type DateKey,
+} from "@/lib/date";
 import { TaskCheck } from "@/lib/icons";
 import { chipColor } from "@/lib/taskChip";
 import { DESKTOP, useMediaQuery } from "@/lib/useMediaQuery";
@@ -16,8 +23,13 @@ type Props = {
   onSelect: (task: Task) => void;
   /** 아이콘 자리의 체크박스. 모달을 열지 않고 완료를 뒤집는다. */
   onToggleDone: (task: Task) => void;
-  /** 좁은 화면에서 칸을 눌렀을 때. 제목이 들어가지 않으니 그날 목록을 대신 연다. */
-  onOpenDay: (key: DateKey) => void;
+  /**
+   * 좁은 화면에서 칸을 눌렀을 때. 그 날짜를 고르기만 하고, 그날 목록은 달력 바로
+   * 아래에 이어서 나온다 — 화면을 덮지 않아서 다른 날짜를 계속 눌러볼 수 있다.
+   */
+  onSelectDay: (key: DateKey) => void;
+  /** 지금 고른 날. 좁은 화면에서 그 칸을 채워 표시한다. */
+  selected: DateKey;
 };
 
 export default function MonthGrid({
@@ -28,19 +40,19 @@ export default function MonthGrid({
   onAddOn,
   onSelect,
   onToggleDone,
-  onOpenDay,
+  onSelectDay,
+  selected,
 }: Props) {
   const cells = buildMonthGrid(year, month);
   /**
-   * 칸을 눌렀을 때 무엇이 열리는가. 이것만은 CSS로 가를 수 없어서 폭을 직접 본다.
-   * 넓은 화면은 칸 안에 제목이 다 보이니 곧장 '추가'로 가고, 좁은 화면은 점만
-   * 찍혀 있으니 먼저 그날 목록을 보여준다.
+   * 칸을 눌렀을 때 무엇이 일어나는가. 이것만은 CSS로 가를 수 없어서 폭을 직접 본다.
+   * 넓은 화면은 칸 안에 제목이 다 보이니 곧장 '추가'로 가고, 좁은 화면은 그 날짜를
+   * 고르기만 한다(목록은 달력 아래에 이어진다).
    */
   const desktop = useMediaQuery(DESKTOP);
 
   /** 오늘이 무슨 요일인지. 요일 머리글에서 그 칸만 또렷하게 둔다(애플 캘린더와 같다). */
-  const t = keyParts(today);
-  const todayWeekday = new Date(t.y, t.m - 1, t.d).getDay();
+  const todayWeekday = weekdayOf(today);
 
   return (
     <>
@@ -70,6 +82,8 @@ export default function MonthGrid({
         {cells.map((cell) => {
           const dayTasks = tasksByDate.get(cell.key) ?? [];
           const isToday = cell.key === today;
+          // 넓은 화면에는 '고른 날'이라는 것이 없다 — 칸마다 내용이 다 보인다.
+          const picked = !desktop && cell.key === selected;
 
           return (
             /*
@@ -80,29 +94,37 @@ export default function MonthGrid({
               key={cell.key}
               role="button"
               tabIndex={0}
-              aria-label={desktop ? `${cell.day}일에 할 일 추가` : `${cell.day}일 일정 보기`}
-              onClick={() => (desktop ? onAddOn(cell.key) : onOpenDay(cell.key))}
+              aria-label={desktop ? `${cell.day}일에 할 일 추가` : `${cell.day}일 고르기`}
+              aria-pressed={picked || undefined}
+              onClick={() => (desktop ? onAddOn(cell.key) : onSelectDay(cell.key))}
               onKeyDown={(e) => {
                 if (e.key !== "Enter" && e.key !== " ") return;
                 e.preventDefault();
                 if (desktop) onAddOn(cell.key);
-                else onOpenDay(cell.key);
+                else onSelectDay(cell.key);
               }}
               className={`group/cell relative flex min-h-[84px] cursor-pointer flex-col gap-0.5 overflow-hidden border-t border-line-soft px-0.5 pb-1 pt-1 transition hover:bg-canvas lg:min-h-[96px] lg:gap-1 lg:border-t-0 lg:px-2 lg:pb-1.5 lg:pt-2 ${
-                isToday ? "bg-soft/50" : "bg-card"
+                picked ? "bg-soft" : isToday ? "bg-soft/50" : "bg-card"
               } ${cell.inMonth ? "" : "opacity-45"}`}
             >
+              {/*
+                고른 날은 채운 동그라미, 오늘은 색 글씨. 좁은 화면에서는 고른 날이
+                따로 있어서 둘을 나눠야 하고, 넓은 화면에는 고른 날이 없으니
+                오늘이 그대로 채운 동그라미를 가져간다.
+              */}
               <span
                 className={
-                  isToday
+                  picked || (isToday && desktop)
                     ? "grid size-6 shrink-0 place-items-center self-center rounded-full bg-accent text-[12px] font-medium text-white lg:size-6 lg:self-start lg:text-[12px]"
-                    : `self-center px-0.5 text-[13px] lg:self-start lg:text-[13px] ${
+                    : isToday
+                      ? "self-center px-0.5 text-[13px] font-medium text-accent-deep lg:self-start"
+                      : `self-center px-0.5 text-[13px] lg:self-start lg:text-[13px] ${
                         cell.weekday === 0
                           ? "text-accent-deep"
                           : cell.inMonth
-                            ? "text-ink-mid"
-                            : "text-ink-soft"
-                      }`
+                              ? "text-ink-mid"
+                              : "text-ink-soft"
+                        }`
                 }
               >
                 {cell.day}

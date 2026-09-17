@@ -3,13 +3,7 @@
 import DayAgenda from "@/components/DayAgenda";
 import MonthGrid from "@/components/MonthGrid";
 import WeekGrid from "@/components/WeekGrid";
-import {
-  formatDayTitle,
-  formatMonthTitle,
-  formatWeekTitle,
-  keyParts,
-  type DateKey,
-} from "@/lib/date";
+import { formatMonthTitle, formatWeekTitle, keyParts, type DateKey } from "@/lib/date";
 import type { CalendarView } from "@/lib/settings";
 import type { Task } from "@/lib/types";
 
@@ -31,9 +25,10 @@ type Props = {
   onViewChange: (view: CalendarView) => void;
   onSelect: (task: Task) => void;
   onToggleDone: (task: Task) => void;
-  /** 좁은 화면에서 월간 칸을 눌렀을 때 여는 그날 목록. */
-  onOpenDay: (key: DateKey) => void;
-  /** 주간에서 요일 줄의 날짜를 눌렀을 때. anchor가 그 날로 옮겨간다. */
+  /**
+   * 좁은 화면에서 날짜를 골랐을 때 — 월간의 칸이든 주간의 요일 줄이든.
+   * anchor가 그 날로 옮겨가고, 달력 아래 목록이 그날 것으로 바뀐다.
+   */
   onSelectDay: (key: DateKey) => void;
 };
 
@@ -64,8 +59,7 @@ function ArrowButton({
   );
 }
 
-const VIEW_LABEL: Record<CalendarView, string> = {
-  day: "일간",
+export const VIEW_LABEL: Record<CalendarView, string> = {
   week: "주간",
   month: "월간",
 };
@@ -78,9 +72,8 @@ function ViewToggle({
   onChange: (v: CalendarView) => void;
 }) {
   return (
-    // 좁은 것부터 넓은 것 순서로 — 일간 · 주간 · 월간.
     <div className="flex rounded-full border border-line p-0.5">
-      {(["day", "week", "month"] as const).map((v) => (
+      {(["week", "month"] as const).map((v) => (
         <button
           key={v}
           type="button"
@@ -109,16 +102,10 @@ export default function Calendar({
   onViewChange,
   onSelect,
   onToggleDone,
-  onOpenDay,
   onSelectDay,
 }: Props) {
   const { y, m } = keyParts(anchor);
-  const title =
-    view === "month"
-      ? formatMonthTitle(y, m)
-      : view === "week"
-        ? formatWeekTitle(anchor)
-        : formatDayTitle(anchor);
+  const title = view === "month" ? formatMonthTitle(y, m) : formatWeekTitle(anchor);
 
   return (
     <section className="flex flex-col rounded-card border border-line bg-card shadow-card">
@@ -159,10 +146,12 @@ export default function Calendar({
 
           {/*
             일정 추가 버튼은 여기 없다. 날짜를 먼저 고르고 나서 추가하는 편이
-            자연스러워서, 추가는 날짜를 누르면 나오는 그날 목록에서만 연다
-            (월간은 시트, 주간·일간은 목록 머리의 '+ 추가').
+            자연스러워서, 추가는 달력 아래 그날 목록의 '+ 추가'에서만 연다.
+
+            보기 전환도 폰에서는 여기 없다 — 달력 윗부분에 버튼이 늘어날수록 정작
+            달력이 안 보인다. 폰에서는 앱 머리줄로 올라갔다.
           */}
-          <div className="order-3 flex w-full items-center lg:ml-auto lg:w-auto">
+          <div className="order-3 hidden w-full items-center lg:ml-auto lg:flex lg:w-auto">
             <ViewToggle value={view} onChange={onViewChange} />
           </div>
         </div>
@@ -177,9 +166,10 @@ export default function Calendar({
           onAddOn={onAddOn}
           onSelect={onSelect}
           onToggleDone={onToggleDone}
-          onOpenDay={onOpenDay}
+          onSelectDay={onSelectDay}
+          selected={anchor}
         />
-      ) : view === "week" ? (
+      ) : (
         <WeekGrid
           anchor={anchor}
           today={today}
@@ -189,15 +179,25 @@ export default function Calendar({
           onToggleDone={onToggleDone}
           onSelectDay={onSelectDay}
         />
-      ) : (
-        <DayAgenda
-          dateKey={anchor}
-          tasks={tasksByDate.get(anchor) ?? []}
-          today={today}
-          onSelect={onSelect}
-          onToggleDone={onToggleDone}
-          onAdd={onAddOn}
-        />
+      )}
+
+      {/*
+        폰에서 월간일 때 고른 날의 목록. 달력을 덮지 않고 아래에 이어 붙는다 —
+        덮어버리면 목록을 보는 동안 다른 날짜를 눌러볼 수가 없다.
+        (주간은 WeekGrid가 요일 줄 아래에 같은 목록을 이미 달고 있다.)
+      */}
+      {view === "month" && (
+        <div className="lg:hidden">
+          <DayAgenda
+            dateKey={anchor}
+            tasks={tasksByDate.get(anchor) ?? []}
+            today={today}
+            showTitle
+            onSelect={onSelect}
+            onToggleDone={onToggleDone}
+            onAdd={onAddOn}
+          />
+        </div>
       )}
     </section>
   );
