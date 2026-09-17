@@ -103,7 +103,7 @@ export default function MonthGrid({
                 if (desktop) onAddOn(cell.key);
                 else onSelectDay(cell.key);
               }}
-              className={`group/cell relative flex min-h-[74px] cursor-pointer flex-col gap-0.5 overflow-hidden border-t border-line-soft px-0.5 pb-1 pt-1 transition hover:bg-canvas lg:min-h-[96px] lg:gap-1 lg:border-t-0 lg:px-2 lg:pb-1.5 lg:pt-2 ${
+              className={`group/cell relative flex min-h-[100px] cursor-pointer flex-col gap-1 overflow-hidden border-t border-line-soft px-0.5 pb-1.5 pt-1.5 transition hover:bg-canvas lg:min-h-[96px] lg:gap-1 lg:border-t-0 lg:px-2 lg:pb-1.5 lg:pt-2 ${
                 picked ? "bg-soft" : isToday ? "bg-soft/50" : "bg-card"
               } ${cell.inMonth ? "" : "opacity-45"}`}
             >
