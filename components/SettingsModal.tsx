@@ -111,7 +111,7 @@ export default function SettingsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/20 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex bg-ink/20 backdrop-blur-[2px] sm:grid sm:place-items-center sm:overflow-y-auto sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -120,9 +120,10 @@ export default function SettingsModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
-        className="my-auto w-full max-w-[360px] rounded-2xl border border-line bg-card p-6 shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)]"
+        /* 폰에서는 화면을 꽉 채우는 시트, 넓은 화면에서는 가운데 카드. */
+        className="flex h-full w-full flex-col bg-card sm:my-auto sm:h-auto sm:max-w-[360px] sm:rounded-2xl sm:border sm:border-line sm:p-6 sm:shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)]"
       >
-        <div className="flex items-center">
+        <div className="flex shrink-0 items-center border-b border-line px-4 py-3 sm:border-0 sm:p-0">
           <h2 id="settings-title" className="text-[16px] font-medium">
             설정
           </h2>
@@ -138,7 +139,8 @@ export default function SettingsModal({
           </button>
         </div>
 
-        <div className="mt-5 space-y-4">
+        {/* 폰에서 스크롤되는 곳은 여기뿐이다. 머리줄의 닫기는 늘 제자리에 있다. */}
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:mt-5 sm:flex-none sm:overflow-visible sm:p-0">
           <Section title="테마">
             <ThemePicker value={theme} onChange={onThemeChange} />
           </Section>

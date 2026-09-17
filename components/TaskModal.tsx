@@ -134,8 +134,15 @@ export default function TaskModal({
   };
 
   return (
+    /*
+      폰에서는 화면을 꽉 채우는 시트, 넓은 화면에서는 가운데 뜨는 카드.
+
+      가운데 카드를 폰에 그대로 가져오면 입력칸이 화면 밖으로 밀려 나가고 저장 버튼이
+      맨 아래에 깔려서, 다 채우고 나서 한참 스크롤해야 저장을 누를 수 있다.
+      폰에서는 머리와 발을 고정하고 가운데만 굴린다 — 저장·취소가 늘 손가락 밑에 있다.
+    */
     <div
-      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/20 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex bg-ink/20 backdrop-blur-[2px] sm:grid sm:place-items-center sm:overflow-y-auto sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -145,9 +152,10 @@ export default function TaskModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="task-modal-title"
-        className="my-auto w-full max-w-[380px] rounded-2xl border border-line bg-card p-5 shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)] sm:p-6"
+        className="flex h-full w-full flex-col bg-card sm:my-auto sm:h-auto sm:max-w-[380px] sm:rounded-2xl sm:border sm:border-line sm:p-6 sm:shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)]"
       >
-        <div className="flex items-center gap-1">
+        {/* 머리 — 폰에서는 스크롤해도 붙어 있다. */}
+        <div className="flex shrink-0 items-center gap-1 border-b border-line px-4 py-2.5 sm:border-0 sm:px-0 sm:py-0">
           <h2 id="task-modal-title" className="mr-auto text-[16px] font-medium">
             {editing ? "할 일 수정" : "할 일 추가"}
           </h2>
@@ -172,8 +180,11 @@ export default function TaskModal({
         {/*
           섹션 간격은 여기 space-y 한 곳에서만 준다.
           각 섹션에 margin을 따로 붙이면 필드를 추가할 때 간격이 어긋난다.
+
+          폰에서 스크롤되는 곳은 여기뿐이다. min-h-0이 없으면 flex 자식이 내용만큼
+          늘어나서 스크롤이 생기지 않고 발이 화면 밖으로 밀려난다.
         */}
-        <div className="mt-5 space-y-5">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4 sm:mt-5 sm:flex-none sm:overflow-visible sm:p-0">
           <label className="block">
             <span className="text-[12px] text-ink-soft">
               할 일 이름 <span className="text-accent-deep">*</span>
@@ -281,29 +292,34 @@ export default function TaskModal({
             />
           </label>
 
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 rounded-full border border-line py-2.5 text-[13px] text-ink-soft transition hover:bg-soft"
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              disabled={!canSave}
-              className="flex-1 rounded-full bg-accent py-2.5 text-[13px] font-medium text-white transition hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {/* 수정에서 날짜를 더 고르면 이 일정 말고 나머지가 새로 만들어진다. */}
-              {saving
-                ? "저장 중…"
-                : dates.length > 1
-                  ? editing
-                    ? `저장 + ${dates.length - 1}개 추가`
-                    : `${dates.length}개 저장`
-                  : "저장"}
-            </button>
-          </div>
+        </div>
+
+        {/*
+          발 — 폰에서는 화면 아래에 붙어 있다. 홈 인디케이터 영역만큼 더 띄운다.
+          넓은 화면에서는 예전처럼 그냥 마지막 줄이다.
+        */}
+        <div className="flex shrink-0 gap-2 border-t border-line px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:mt-5 sm:border-0 sm:p-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-full border border-line py-2.5 text-[13px] text-ink-soft transition hover:bg-soft"
+          >
+            취소
+          </button>
+          <button
+            type="submit"
+            disabled={!canSave}
+            className="flex-1 rounded-full bg-accent py-2.5 text-[13px] font-medium text-white transition hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {/* 수정에서 날짜를 더 고르면 이 일정 말고 나머지가 새로 만들어진다. */}
+            {saving
+              ? "저장 중…"
+              : dates.length > 1
+                ? editing
+                  ? `저장 + ${dates.length - 1}개 추가`
+                  : `${dates.length}개 저장`
+                : "저장"}
+          </button>
         </div>
       </form>
 

@@ -133,7 +133,7 @@ export default function TaskDetail({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/20 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex bg-ink/20 backdrop-blur-[2px] sm:grid sm:place-items-center sm:overflow-y-auto sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -142,9 +142,13 @@ export default function TaskDetail({
         role="dialog"
         aria-modal="true"
         aria-labelledby="task-detail-title"
-        className="my-auto w-full max-w-[380px] rounded-2xl border border-line bg-card p-5 shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)] sm:p-6"
+        /*
+          폰에서는 화면을 꽉 채우는 시트, 넓은 화면에서는 가운데 카드.
+          머리와 버튼 줄을 고정하고 가운데만 굴린다 — 메모가 길어도 '수정'이 손가락 밑에 있다.
+        */
+        className="flex h-full w-full flex-col bg-card sm:my-auto sm:h-auto sm:max-w-[380px] sm:rounded-2xl sm:border sm:border-line sm:p-6 sm:shadow-[0_18px_50px_-20px_rgba(92,74,71,0.35)]"
       >
-        <div className="flex items-start gap-2.5">
+        <div className="flex shrink-0 items-start gap-2.5 border-b border-line px-4 py-3 sm:border-0 sm:p-0">
           <TaskIcon icon={task.icon} done={task.is_done} className="mt-0.5 text-[20px]" />
           <h2
             id="task-detail-title"
@@ -177,7 +181,7 @@ export default function TaskDetail({
           정할 수 없고, 억지로 오늘에 붙이면 엉뚱한 날에 글이 쌓인다.
         */}
         {date !== null && (
-          <div className="-mx-1 mt-4 flex gap-1">
+          <div className="flex shrink-0 gap-1 px-3 pt-2 sm:-mx-1 sm:mt-4 sm:px-0 sm:pt-0">
             <Tab active={tab === "task"} onClick={() => setTab("task")}>
               일정
             </Tab>
@@ -190,7 +194,7 @@ export default function TaskDetail({
 
         {tab === "task" ? (
           <>
-            <div className="mt-5 space-y-3">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:mt-5 sm:flex-none sm:overflow-visible sm:p-0">
               <Field label="마감일">
                 {task.due_date ? (
                   <span className="flex flex-wrap items-baseline gap-2">
@@ -232,7 +236,7 @@ export default function TaskDetail({
               )}
             </div>
 
-            <div className="mt-6 flex gap-2">
+            <div className="flex shrink-0 gap-2 border-t border-line px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:mt-6 sm:border-0 sm:p-0">
               <button
                 type="button"
                 onClick={onClose}
@@ -251,24 +255,27 @@ export default function TaskDetail({
           </>
         ) : (
           <>
-            <div className="mt-4 flex items-baseline gap-2 px-1">
-              <span className="text-[12px] text-ink-soft">{longDate(date!)}</span>
-              <span className="ml-auto text-[11px] text-ink-faint">
-                {writing ? "저장 중…" : dirty ? "저장 안 됨" : saved ? "저장됨" : ""}
-              </span>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:mt-4 sm:flex-none sm:overflow-visible sm:p-0">
+              <div className="flex items-baseline gap-2 px-1">
+                <span className="text-[12px] text-ink-soft">{longDate(date!)}</span>
+                <span className="ml-auto text-[11px] text-ink-faint">
+                  {writing ? "저장 중…" : dirty ? "저장 안 됨" : saved ? "저장됨" : ""}
+                </span>
+              </div>
+
+              <textarea
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                placeholder="이 날은 어땠나요? 잘한 것, 아쉬운 것, 다음에 할 것…"
+                maxLength={REFLECTION_MAX}
+                autoFocus
+                // resize-none: 사용자가 늘리면 모달 밖으로 삐져나온다. 넘치면 안에서 스크롤된다.
+                className="mt-2 h-[160px] w-full resize-none rounded-lg border border-line bg-canvas px-3 py-2.5 text-[13px] leading-relaxed outline-none placeholder:text-ink-faint focus:border-accent"
+              />
+
             </div>
 
-            <textarea
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="이 날은 어땠나요? 잘한 것, 아쉬운 것, 다음에 할 것…"
-              maxLength={REFLECTION_MAX}
-              autoFocus
-              // resize-none: 사용자가 늘리면 모달 밖으로 삐져나온다. 넘치면 안에서 스크롤된다.
-              className="mt-2 h-[160px] w-full resize-none rounded-lg border border-line bg-canvas px-3 py-2.5 text-[13px] leading-relaxed outline-none placeholder:text-ink-faint focus:border-accent"
-            />
-
-            <div className="mt-4 flex gap-2">
+            <div className="flex shrink-0 gap-2 border-t border-line px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:mt-4 sm:border-0 sm:p-0">
               <button
                 type="button"
                 onClick={onClose}
