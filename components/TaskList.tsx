@@ -72,14 +72,21 @@ function Row({
           {task.title}
         </span>
 
+        {/*
+          시간이 앞, 날짜가 뒤다. 날짜를 앞에 두면 시간이 붙은 줄만 날짜가 왼쪽으로
+          밀려서, 줄마다 날짜가 다른 자리에 찍힌다 — 세로로 훑을 수가 없다.
+          날짜 칸에 최소 폭을 줘서 오른쪽 끝을 맞춘다.
+        */}
         {task.due_date && (
           <span
-            className={`ml-auto shrink-0 text-[11px] ${
+            className={`ml-auto flex shrink-0 items-baseline gap-1.5 text-[11px] ${
               task.is_done ? "text-ink-faint" : "text-ink-soft"
             }`}
           >
-            {task.due_date.slice(5).replace("-", "/")}
-            {task.due_time && ` ${formatTime(task.due_time)}`}
+            {task.due_time && <span>{formatTime(task.due_time)}</span>}
+            <span className="min-w-[38px] text-right">
+              {task.due_date.slice(5).replace("-", "/")}
+            </span>
           </span>
         )}
       </button>
