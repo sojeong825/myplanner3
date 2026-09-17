@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AuthModal from "@/components/AuthModal";
 import BannerCard from "@/components/BannerCard";
 import Calendar from "@/components/Calendar";
+import CategoryMenu from "@/components/CategoryMenu";
 import CounterCard from "@/components/CounterCard";
 import DaySheet from "@/components/DaySheet";
 import MergePrompt from "@/components/MergePrompt";
@@ -603,9 +604,16 @@ export default function Page() {
             </svg>
           </button>
 
-          <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-ink">
-            {settings.planner_name}
-          </span>
+          {/*
+            플래너 이름 대신 '지금 보고 있는 분류'를 둔다. 이름은 한 번 정하면 바뀌지
+            않아서 자리만 차지했고, 분류는 달력을 보며 가장 자주 바꾸는 값인데 서랍을
+            열어야만 닿았다. 이름은 서랍 안 프로필 아래에 그대로 있다.
+          */}
+          <CategoryMenu
+            categories={categories}
+            value={filter}
+            onChange={(next) => void saveSetting({ filter_category_id: next })}
+          />
 
           <button
             type="button"
