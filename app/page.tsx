@@ -79,6 +79,42 @@ const byDueDesc = (a: Task, b: Task) =>
 const message = (e: unknown, fallback: string) =>
   e instanceof Error ? e.message : fallback;
 
+/** 폰 아래쪽 탭 하나. 아이콘 + 이름을 세로로 쌓는 흔한 모양. */
+function MobileTab({
+  active,
+  label,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={active ? "page" : undefined}
+      className={`flex flex-1 flex-col items-center gap-0.5 py-2 transition ${
+        active ? "text-accent-deep" : "text-ink-faint"
+      }`}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        className="size-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={active ? 2 : 1.6}
+      >
+        {children}
+      </svg>
+      <span className="text-[11px]">{label}</span>
+    </button>
+  );
+}
+
 export default function Page() {
   // 날짜에 의존하는 렌더는 하이드레이션 이후로 미룬다.
   const [today, setToday] = useState<DateKey | null>(null);
@@ -120,6 +156,13 @@ export default function Page() {
    * 넓은 화면에서는 칸에 제목이 그대로 보이므로 이 시트가 뜰 일이 없다.
    */
   const [daySheetKey, setDaySheetKey] = useState<DateKey | null>(null);
+  /**
+   * 폰에서 아래 탭으로 오가는 화면. 한 화면에 달력과 할 일을 같이 쌓으면 달력이
+   * 작아지고 스크롤만 길어진다. 넓은 화면에서는 둘 다 한꺼번에 보이므로 쓰이지 않는다.
+   */
+  const [mobileTab, setMobileTab] = useState<"calendar" | "tasks">("calendar");
+  /** 폰 머리줄의 돋보기로 여는 검색. 넓은 화면에서는 본문에 늘 떠 있다. */
+  const [searchOpen, setSearchOpen] = useState(false);
   /** 로그인했는데 서버에도 로컬에도 데이터가 있어 합칠지 물어야 하는 상태 */
   const [mergeCount, setMergeCount] = useState<number | null>(null);
 
@@ -559,6 +602,18 @@ export default function Page() {
 
           <button
             type="button"
+            onClick={() => setSearchOpen(true)}
+            aria-label="일정 검색"
+            className="grid size-9 shrink-0 place-items-center rounded-full text-ink-soft transition hover:bg-soft hover:text-ink"
+          >
+            <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <circle cx="11" cy="11" r="6.5" />
+              <path d="M16 16l4 4" strokeLinecap="round" />
+            </svg>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setSettingsOpen(true)}
             aria-label="설정"
             className="grid size-9 shrink-0 place-items-center rounded-full text-ink-soft transition hover:bg-soft hover:text-ink"
@@ -573,9 +628,42 @@ export default function Page() {
           </button>
         </header>
 
-        {/* 좁은 화면에서는 달력 아래로 오른쪽 단이 내려와 한 줄로 쌓인다. */}
-        <main className="flex min-w-0 flex-1 flex-col gap-5 p-4 lg:flex-row lg:items-start lg:p-6">
-          <div className="flex min-w-0 flex-1 flex-col gap-5">
+        {/* 폰 검색. 머리줄을 덮고 내려와서 자판이 바로 올라온다. */}
+        {searchOpen && (
+          <div className="fixed inset-0 z-40 lg:hidden">
+            <button
+              type="button"
+              aria-label="검색 닫기"
+              onClick={() => setSearchOpen(false)}
+              className="absolute inset-0 bg-ink/20 backdrop-blur-[2px]"
+            />
+            <div className="relative flex items-center gap-2 border-b border-line bg-card p-3">
+              <div className="min-w-0 flex-1">
+                <TaskSearch
+                  tasks={tasks}
+                  today={today}
+                  autoFocus
+                  onSelect={(task) => {
+                    setSearchOpen(false);
+                    openView(task);
+                  }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setSearchOpen(false)}
+                className="shrink-0 px-1 text-[13px] text-ink-soft"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        )}
+
+
+        {/* 아래 탭바에 가리지 않도록 폰에서만 아래 여백을 크게 준다. */}
+        <main className="flex min-w-0 flex-1 flex-col gap-4 p-3 pb-24 lg:flex-row lg:items-start lg:gap-5 lg:p-6">
+          <div className="flex min-w-0 flex-1 flex-col gap-4 lg:gap-5">
             {error && (
               <div className="flex items-center gap-3 rounded-card border border-soft-deep bg-soft px-4 py-3 text-[12px] text-accent-deep">
                 <span className="min-w-0 flex-1">{error}</span>
@@ -588,11 +676,18 @@ export default function Page() {
                 </button>
               </div>
             )}
-  
-            <TaskSearch tasks={tasks} today={today} onSelect={openView} />
-  
-            {/* 배너는 180px 고정. 카운터는 편집할 때만 더 커지면 되므로 items-start. */}
-            <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+
+            {/* 폰에서는 머리줄의 돋보기가 검색을 연다. 여기 있는 것은 넓은 화면용. */}
+            <div className="hidden lg:block">
+              <TaskSearch tasks={tasks} today={today} onSelect={openView} />
+            </div>
+
+            {/*
+              배너는 180px 고정. 카운터는 편집할 때만 더 커지므로 items-start.
+              둘 다 폰에서는 이 자리에 없다 — 배너는 화면 높이를 크게 먹으면서 달력을
+              아래로 밀어내서 아예 빼고, 카운터는 할 일 탭으로 옮겼다.
+            */}
+            <div className="hidden items-start gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
               <CounterCard
                 label={settings.counter_label}
                 date={settings.counter_date}
@@ -614,33 +709,90 @@ export default function Page() {
                 }
               />
             </div>
-  
-            <Calendar
-              anchor={anchor}
-              view={view}
-              today={today}
-              tasksByDate={tasksByDate}
-              // 칸을 누르면 그 날짜로 추가 모달이 곧장 열린다.
-              onAddOn={openAdd}
-              onPrev={() => step(-1)}
-              onNext={() => step(1)}
-              onToday={() => setAnchor(todayKey())}
-              onViewChange={(next) => void saveSetting({ calendar_view: next })}
-              onSelect={openView}
-              onToggleDone={toggleTask}
-              onOpenDay={setDaySheetKey}
-              // 헤더 버튼은 날짜 없이 연다. 달력 칸을 눌러야 날짜가 붙는다.
-              onAdd={() => openAdd(null)}
-            />
+
+            {/*
+              폰에서만 달력 위에 놓이는 다가오는/지난 일정. 다섯 개까지만 보여준다 —
+              길어지는 만큼 달력이 아래로 밀려난다. 넓은 화면에서는 오른쪽 단에 있다.
+            */}
+            <div
+              className={`lg:hidden ${
+                // 둘 다 비면 카드째 감춘다. '없어요' 한 줄이 달력을 100px 밀어낼 이유는 없다.
+                mobileTab === "calendar" && (loading || upcoming.length > 0 || overdue.length > 0)
+                  ? "block"
+                  : "hidden"
+              }`}
+            >
+              {loading ? (
+                <div className="h-32 animate-pulse rounded-card border border-line bg-card" />
+              ) : (
+                <ScheduleCard
+                  upcoming={upcoming}
+                  overdue={overdue}
+                  today={today}
+                  limit={5}
+                  onSelect={openView}
+                  onToggleDone={toggleTask}
+                />
+              )}
+            </div>
+
+            <div className={`lg:block ${mobileTab === "calendar" ? "block" : "hidden"}`}>
+              <Calendar
+                anchor={anchor}
+                view={view}
+                today={today}
+                tasksByDate={tasksByDate}
+                // 칸을 누르면 그 날짜로 추가 모달이 곧장 열린다.
+                onAddOn={openAdd}
+                onPrev={() => step(-1)}
+                onNext={() => step(1)}
+                onToday={() => setAnchor(todayKey())}
+                onViewChange={(next) => void saveSetting({ calendar_view: next })}
+                onSelect={openView}
+                onToggleDone={toggleTask}
+                onOpenDay={setDaySheetKey}
+                // 헤더 버튼은 날짜 없이 연다. 달력 칸을 눌러야 날짜가 붙는다.
+                onAdd={() => openAdd(null)}
+              />
+            </div>
+
+            {/* ── 폰: 할 일 탭 ── */}
+            <div
+              className={`flex-col gap-4 lg:hidden ${
+                mobileTab === "tasks" ? "flex" : "hidden"
+              }`}
+            >
+              <CounterCard
+                label={settings.counter_label}
+                date={settings.counter_date}
+                today={today}
+                onSave={(counter_label, counter_date) =>
+                  void saveSetting({ counter_label, counter_date })
+                }
+              />
+
+              {loading ? (
+                <div className="h-64 animate-pulse rounded-card border border-line bg-card" />
+              ) : (
+                <TaskList
+                  pending={pending}
+                  done={done}
+                  onToggle={toggleTask}
+                  onToggleStar={toggleStar}
+                  onSelect={openView}
+                  onAdd={() => openAdd(null)}
+                />
+              )}
+            </div>
           </div>
-  
+
           {/*
             가운데가 길어져도 계속 보이도록 붙여둔다.
             overflow-hidden은 필수다. 안쪽 목록이 max-h를 넘긴 만큼은 카드 안에서 잘려
             보이지 않는데도 문서 스크롤 높이에는 그대로 더해져서, 목록이 길어지면
             화면에 아무것도 없는 여백이 아래로 길게 생긴다.
           */}
-          <div className="flex w-full shrink-0 flex-col gap-5 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:w-[300px] lg:overflow-hidden">
+          <div className="hidden w-full shrink-0 flex-col gap-5 lg:sticky lg:top-6 lg:flex lg:max-h-[calc(100vh-3rem)] lg:w-[300px] lg:overflow-hidden">
             {loading ? (
               <div className="h-40 animate-pulse rounded-card border border-line bg-card" />
             ) : (
@@ -652,7 +804,7 @@ export default function Page() {
                 onToggleDone={toggleTask}
               />
             )}
-  
+
             {loading ? (
               <div className="h-64 flex-1 animate-pulse rounded-card border border-line bg-card lg:h-auto" />
             ) : (
@@ -667,6 +819,29 @@ export default function Page() {
             )}
           </div>
         </main>
+
+        {/* 폰 전용 아래 탭바. 홈 인디케이터 영역만큼 아래를 더 띄운다. */}
+        <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-card pb-[env(safe-area-inset-bottom)] lg:hidden">
+          <MobileTab
+            active={mobileTab === "calendar"}
+            label="달력"
+            onClick={() => setMobileTab("calendar")}
+          >
+            <rect x="3.5" y="5" width="17" height="15" rx="2.5" />
+            <path d="M3.5 9.5h17M8 3.5v3M16 3.5v3" strokeLinecap="round" />
+          </MobileTab>
+          <MobileTab
+            active={mobileTab === "tasks"}
+            label="할 일"
+            onClick={() => setMobileTab("tasks")}
+          >
+            <path
+              d="M4 7l2 2 3.5-3.5M4 16l2 2 3.5-3.5M13 7.5h7M13 16.5h7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </MobileTab>
+        </nav>
       </div>
 
       {/* 좁은 화면에서 달력 칸을 눌렀을 때 아래에서 올라오는 그날 목록. */}

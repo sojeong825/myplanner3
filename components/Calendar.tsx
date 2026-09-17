@@ -100,33 +100,42 @@ export default function Calendar({
   return (
     <section className="flex flex-col rounded-card border border-line bg-card shadow-card">
       <header className="px-4 py-4 lg:px-6 lg:py-5">
+        {/*
+          폰에서는 '지금 어느 달인지'가 맨 먼저 읽혀야 해서 제목을 왼쪽 맨 앞에 두고,
+          오늘·화살표를 오른쪽으로 보낸다. 보기 전환과 추가는 아랫줄로 내려간다.
+          넓은 화면에서는 order로 예전 순서(오늘·화살표 → 제목 → 전환·추가)를 되돌린다.
+        */}
         <div className="flex flex-wrap items-center gap-2 lg:gap-3">
-          <button
-            type="button"
-            onClick={onToday}
-            className="rounded-full border border-line px-3 py-1 text-[12px] text-ink-soft transition hover:bg-soft hover:text-ink"
-          >
-            오늘
-          </button>
-          <ArrowButton
-            dir="prev"
-            onClick={onPrev}
-            label={view === "month" ? "이전 달" : "이전 주"}
-          />
-          <ArrowButton
-            dir="next"
-            onClick={onNext}
-            label={view === "month" ? "다음 달" : "다음 주"}
-          />
+          <h2 className="order-1 whitespace-nowrap text-[18px] font-medium lg:order-2 lg:ml-1 lg:text-[19px]">
+            {title}
+          </h2>
 
-          <h2 className="ml-1 whitespace-nowrap text-[16px] font-medium lg:text-[19px]">{title}</h2>
+          <div className="order-2 ml-auto flex items-center gap-1.5 lg:order-1 lg:ml-0 lg:gap-3">
+            <button
+              type="button"
+              onClick={onToday}
+              className="rounded-full border border-line px-3 py-1 text-[12px] text-ink-soft transition hover:bg-soft hover:text-ink"
+            >
+              오늘
+            </button>
+            <ArrowButton
+              dir="prev"
+              onClick={onPrev}
+              label={view === "month" ? "이전 달" : "이전 주"}
+            />
+            <ArrowButton
+              dir="next"
+              onClick={onNext}
+              label={view === "month" ? "다음 달" : "다음 주"}
+            />
+          </div>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="order-3 flex w-full items-center gap-2 lg:ml-auto lg:w-auto">
             <ViewToggle value={view} onChange={onViewChange} />
             <button
               type="button"
               onClick={onAdd}
-              className="whitespace-nowrap rounded-full bg-accent px-3.5 py-2 text-[13px] font-medium text-white transition hover:bg-accent-deep lg:px-4"
+              className="ml-auto whitespace-nowrap rounded-full bg-accent px-3.5 py-2 text-[13px] font-medium text-white transition hover:bg-accent-deep lg:ml-0 lg:px-4"
             >
               + 일정 추가
             </button>

@@ -13,6 +13,8 @@ type Props = {
   tasks: Task[];
   today: DateKey;
   onSelect: (task: Task) => void;
+  /** 폰에서 돋보기로 열었을 때. 열자마자 자판이 올라와야 한 번 더 누를 일이 없다. */
+  autoFocus?: boolean;
 };
 
 const MAX_RESULTS = 8;
@@ -21,13 +23,18 @@ const MAX_RESULTS = 8;
  * 제목으로 할 일을 찾는다. 달력이나 목록을 걸러내지 않고 결과만 띄우는 조회용이라,
  * 검색을 껐다 켜도 화면 상태가 흐트러지지 않는다.
  */
-export default function TaskSearch({ tasks, today, onSelect }: Props) {
+export default function TaskSearch({ tasks, today, onSelect, autoFocus = false }: Props) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   /** 방향키로 고르고 있는 항목. 목록이 바뀌면 항상 첫 번째로 되돌아간다. */
   const [active, setActive] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
+
+  useEffect(() => {
+    if (autoFocus) inputRef.current?.focus();
+  }, [autoFocus]);
 
   const hits = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -116,6 +123,7 @@ export default function TaskSearch({ tasks, today, onSelect }: Props) {
         </svg>
 
         <input
+          ref={inputRef}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);

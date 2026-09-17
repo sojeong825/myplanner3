@@ -39,7 +39,7 @@ export default function MonthGrid({
 
   return (
     <>
-      <div className="grid grid-cols-7 border-t border-line px-2">
+      <div className="grid grid-cols-7 border-t border-line px-1 lg:px-2">
         {WEEKDAYS.map((w, i) => (
           <div
             key={w}
@@ -52,7 +52,12 @@ export default function MonthGrid({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 grid-rows-6 gap-px overflow-hidden rounded-b-card bg-line-soft">
+      {/*
+        좁은 화면에서는 세로 칸막이를 지운다. 가로 일곱 칸에 칸막이까지 그으면 글자보다
+        선이 먼저 보인다 — 애플 캘린더도 가로줄만 긋는다. 넓은 화면은 칸마다 일정 제목이
+        여러 줄 들어가므로 격자가 있는 편이 낫다.
+      */}
+      <div className="grid grid-cols-7 grid-rows-6 overflow-hidden rounded-b-card lg:gap-px lg:bg-line-soft">
         {cells.map((cell) => {
           const dayTasks = tasksByDate.get(cell.key) ?? [];
           const isToday = cell.key === today;
@@ -74,15 +79,15 @@ export default function MonthGrid({
                 if (desktop) onAddOn(cell.key);
                 else onOpenDay(cell.key);
               }}
-              className={`group/cell relative flex min-h-[62px] cursor-pointer flex-col gap-1 overflow-hidden px-1 pb-1 pt-1.5 transition hover:bg-canvas lg:min-h-[96px] lg:px-2 lg:pb-1.5 lg:pt-2 ${
+              className={`group/cell relative flex min-h-[72px] cursor-pointer flex-col gap-1 overflow-hidden border-t border-line-soft px-1 pb-1 pt-1.5 transition hover:bg-canvas lg:min-h-[96px] lg:border-t-0 lg:px-2 lg:pb-1.5 lg:pt-2 ${
                 isToday ? "bg-soft/50" : "bg-card"
               } ${cell.inMonth ? "" : "opacity-45"}`}
             >
               <span
                 className={
                   isToday
-                    ? "grid size-5 shrink-0 place-items-center self-start rounded-full bg-accent text-[11px] font-medium text-white lg:size-6 lg:text-[12px]"
-                    : `self-start px-0.5 text-[12px] lg:text-[13px] ${
+                    ? "grid size-6 shrink-0 place-items-center self-center rounded-full bg-accent text-[12px] font-medium text-white lg:size-6 lg:self-start lg:text-[12px]"
+                    : `self-center px-0.5 text-[13px] lg:self-start lg:text-[13px] ${
                         cell.weekday === 0
                           ? "text-accent-deep"
                           : cell.inMonth
@@ -106,18 +111,18 @@ export default function MonthGrid({
                 좁은 화면에서는 제목을 넣을 자리가 없다(칸 하나가 가로 50px 남짓).
                 이모지만 점처럼 찍어두고, 읽고 누르는 일은 칸을 눌러 여는 그날 목록에 맡긴다.
               */}
-              <div className="flex flex-wrap items-center gap-0.5 lg:hidden">
-                {dayTasks.slice(0, 4).map((task) => (
+              <div className="flex flex-wrap items-center justify-center gap-0.5 lg:hidden">
+                {dayTasks.slice(0, 3).map((task) => (
                   <TaskIcon
                     key={task.id}
                     icon={task.icon}
                     done={task.is_done}
-                    className="text-[11px]"
+                    className="text-[12px]"
                   />
                 ))}
-                {dayTasks.length > 4 && (
-                  <span className="text-[9px] leading-none text-ink-faint">
-                    +{dayTasks.length - 4}
+                {dayTasks.length > 3 && (
+                  <span className="text-[10px] leading-none text-ink-faint">
+                    +{dayTasks.length - 3}
                   </span>
                 )}
               </div>

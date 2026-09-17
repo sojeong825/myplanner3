@@ -19,6 +19,12 @@ type Props = {
    * ('할 일' 카드에서 완료 쪽으로 옮겨가는 것과 같다).
    */
   onToggleDone: (task: Task) => void;
+  /**
+   * 한 번에 보여줄 최대 개수. 폰에서는 이 카드가 달력 **위**에 놓여서, 길어지는
+   * 만큼 달력이 아래로 밀려난다. 넓은 화면에서는 오른쪽 단에 있어 밀어낼 것이
+   * 없으므로 묶지 않는다.
+   */
+  limit?: number;
 };
 
 function Tab({
@@ -61,6 +67,7 @@ export default function ScheduleCard({
   today,
   onSelect,
   onToggleDone,
+  limit,
 }: Props) {
   /**
    * 어느 탭을 보고 있는지. **오직 사용자가 누를 때만 바뀐다.**
@@ -72,12 +79,14 @@ export default function ScheduleCard({
    */
   const [tab, setTab] = useState<TabId>("upcoming");
 
-  const tasks = tab === "upcoming" ? upcoming : overdue;
+  const all = tab === "upcoming" ? upcoming : overdue;
+  const tasks = limit ? all.slice(0, limit) : all;
+  const hidden = all.length - tasks.length;
 
   return (
     // 항목이 늘어도 화면 절반을 넘지 않게 카드 높이를 묶고, 넘치면 안에서만 스크롤한다.
     // 그래야 아래 '할 일' 카드 자리가 밀리지 않는다.
-    <section className="flex max-h-[50vh] shrink-0 flex-col rounded-card border border-line bg-card p-5 shadow-card">
+    <section className="flex max-h-[50vh] shrink-0 flex-col rounded-card border border-line bg-card p-4 shadow-card lg:p-5">
       <div className="-mx-1 flex items-center gap-1">
         <Tab
           active={tab === "upcoming"}
@@ -117,7 +126,7 @@ export default function ScheduleCard({
                     onSelect(task);
                   }}
                   title={task.memo ? `${task.title}\n${task.memo}` : task.title}
-                  className="group/task flex w-full cursor-pointer items-center gap-2 rounded-[10px] bg-card px-3 py-2.5 text-left transition hover:bg-canvas"
+                  className="group/task flex w-full cursor-pointer items-center gap-2 rounded-[10px] bg-card px-2 py-2 text-left transition hover:bg-canvas lg:px-3 lg:py-2.5"
                 >
                   <TaskCheck
                     icon={task.icon}
@@ -145,6 +154,10 @@ export default function ScheduleCard({
               </li>
             );
           })}
+
+          {hidden > 0 && (
+            <li className="px-2 pt-1 text-[11px] text-ink-faint">외 {hidden}개 더 있어요</li>
+          )}
         </ul>
       )}
     </section>
