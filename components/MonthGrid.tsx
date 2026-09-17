@@ -1,7 +1,8 @@
 "use client";
 
-import { buildMonthGrid, formatTime, WEEKDAYS, type DateKey } from "@/lib/date";
-import { TaskCheck, TaskIcon } from "@/lib/icons";
+import { buildMonthGrid, formatTime, keyParts, WEEKDAYS, type DateKey } from "@/lib/date";
+import { TaskCheck } from "@/lib/icons";
+import { chipColor } from "@/lib/taskChip";
 import { DESKTOP, useMediaQuery } from "@/lib/useMediaQuery";
 import type { Task } from "@/lib/types";
 
@@ -37,6 +38,10 @@ export default function MonthGrid({
    */
   const desktop = useMediaQuery(DESKTOP);
 
+  /** 오늘이 무슨 요일인지. 요일 머리글에서 그 칸만 또렷하게 둔다(애플 캘린더와 같다). */
+  const t = keyParts(today);
+  const todayWeekday = new Date(t.y, t.m - 1, t.d).getDay();
+
   return (
     <>
       <div className="grid grid-cols-7 border-t border-line px-1 lg:px-2">
@@ -44,7 +49,11 @@ export default function MonthGrid({
           <div
             key={w}
             className={`py-2 text-center text-[12px] lg:py-2.5 lg:text-[13px] ${
-              i === 0 ? "text-accent-deep" : "text-ink-soft"
+              i === todayWeekday
+                ? "font-medium text-accent-deep"
+                : i === 0
+                  ? "text-accent-deep/70"
+                  : "text-ink-soft"
             }`}
           >
             {w}
@@ -79,7 +88,7 @@ export default function MonthGrid({
                 if (desktop) onAddOn(cell.key);
                 else onOpenDay(cell.key);
               }}
-              className={`group/cell relative flex min-h-[72px] cursor-pointer flex-col gap-1 overflow-hidden border-t border-line-soft px-1 pb-1 pt-1.5 transition hover:bg-canvas lg:min-h-[96px] lg:border-t-0 lg:px-2 lg:pb-1.5 lg:pt-2 ${
+              className={`group/cell relative flex min-h-[84px] cursor-pointer flex-col gap-0.5 overflow-hidden border-t border-line-soft px-0.5 pb-1 pt-1 transition hover:bg-canvas lg:min-h-[96px] lg:gap-1 lg:border-t-0 lg:px-2 lg:pb-1.5 lg:pt-2 ${
                 isToday ? "bg-soft/50" : "bg-card"
               } ${cell.inMonth ? "" : "opacity-45"}`}
             >
@@ -111,18 +120,30 @@ export default function MonthGrid({
                 좁은 화면에서는 제목을 넣을 자리가 없다(칸 하나가 가로 50px 남짓).
                 이모지만 점처럼 찍어두고, 읽고 누르는 일은 칸을 눌러 여는 그날 목록에 맡긴다.
               */}
-              <div className="flex flex-wrap items-center justify-center gap-0.5 lg:hidden">
-                {dayTasks.slice(0, 3).map((task) => (
-                  <TaskIcon
+              {/*
+                좁은 화면에서도 **제목**을 보여준다. 이모지만 찍어두면 그날 무슨 일이
+                있는지 알 수 없어서, 결국 칸을 하나씩 눌러봐야 한다.
+
+                이모지는 칩에 넣지 않는다 — 칸 하나가 가로 50px 남짓이라 이모지가
+                두세 글자를 먹는다. 이모지는 그날 목록과 할 일 쪽에 그대로 있다.
+
+                두 개까지만 눕히고 나머지는 '+n'. 더 넣으면 줄마다 글자가 반 토막 난다.
+              */}
+              <div className="flex flex-col gap-px lg:hidden">
+                {dayTasks.slice(0, 2).map((task) => (
+                  <span
                     key={task.id}
-                    icon={task.icon}
-                    done={task.is_done}
-                    className="text-[12px]"
-                  />
+                    className={`truncate rounded-[3px] px-1 text-[10px] leading-[15px] ${chipColor(
+                      task.category_id,
+                      task.is_done,
+                    )} ${task.is_starred && !task.is_done ? "font-medium" : ""}`}
+                  >
+                    {task.title}
+                  </span>
                 ))}
-                {dayTasks.length > 3 && (
-                  <span className="text-[10px] leading-none text-ink-faint">
-                    +{dayTasks.length - 3}
+                {dayTasks.length > 2 && (
+                  <span className="px-1 text-[9px] leading-[13px] text-ink-faint">
+                    +{dayTasks.length - 2}
                   </span>
                 )}
               </div>

@@ -111,10 +111,14 @@ export default function Calendar({
           </h2>
 
           <div className="order-2 ml-auto flex items-center gap-1.5 lg:order-1 lg:ml-0 lg:gap-3">
+            {/*
+              '오늘'은 넓은 화면에만 둔다. 폰에서는 달을 넘겨봐야 한두 칸이고, 머리줄에
+              자리가 빠듯해서 제목과 화살표가 먼저다.
+            */}
             <button
               type="button"
               onClick={onToday}
-              className="rounded-full border border-line px-3 py-1 text-[12px] text-ink-soft transition hover:bg-soft hover:text-ink"
+              className="hidden rounded-full border border-line px-3 py-1 text-[12px] text-ink-soft transition hover:bg-soft hover:text-ink lg:block"
             >
               오늘
             </button>
