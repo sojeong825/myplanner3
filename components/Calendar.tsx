@@ -20,6 +20,7 @@ type Props = {
   onToday: () => void;
   onViewChange: (view: CalendarView) => void;
   onSelect: (task: Task) => void;
+  onToggleDone: (task: Task) => void;
   onAdd: () => void;
 };
 
@@ -87,6 +88,7 @@ export default function Calendar({
   onToday,
   onViewChange,
   onSelect,
+  onToggleDone,
   onAdd,
 }: Props) {
   const { y, m } = keyParts(anchor);
@@ -137,6 +139,7 @@ export default function Calendar({
           tasksByDate={tasksByDate}
           onAddOn={onAddOn}
           onSelect={onSelect}
+          onToggleDone={onToggleDone}
         />
       ) : (
         <WeekGrid
@@ -145,6 +148,7 @@ export default function Calendar({
           tasksByDate={tasksByDate}
           onAddOn={onAddOn}
           onSelect={onSelect}
+          onToggleDone={onToggleDone}
         />
       )}
     </section>

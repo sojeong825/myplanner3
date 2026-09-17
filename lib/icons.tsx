@@ -241,3 +241,70 @@ export function TrashButton({
     </button>
   );
 }
+
+/* ------------------------------- 완료 체크 -------------------------------- */
+
+/**
+ * 아이콘 자리에 겹쳐 둔 완료 체크박스.
+ *
+ * 달력이나 '다가오는 일정'에서도 모달을 열지 않고 완료를 바꿀 수 있어야 한다.
+ * 그렇다고 좁은 칸에 체크박스 자리를 늘 비워두면 아이콘과 나란히 두 칸을 먹는다.
+ * 그래서 같은 자리에 겹쳐두고, 마우스를 올린 동안에만 체크박스가 보인다.
+ *
+ * 쓰는 쪽 항목에 `group/task`가 있어야 하고, 그 항목은 <button>이면 안 된다 —
+ * 버튼 안에 버튼을 넣을 수 없다. 달력 칸과 같은 방식으로 div role="button"을 쓸 것.
+ */
+export function TaskCheck({
+  icon,
+  done,
+  onToggle,
+  iconClassName = "text-[13px]",
+  boxClassName = "size-4",
+}: {
+  icon: string | null;
+  done: boolean;
+  onToggle: () => void;
+  iconClassName?: string;
+  boxClassName?: string;
+}) {
+  const label = done ? "완료 취소" : "완료 표시";
+
+  return (
+    <span className="relative inline-flex shrink-0">
+      <TaskIcon
+        icon={icon}
+        done={done}
+        className={`${iconClassName} transition group-hover/task:opacity-0`}
+      />
+      <button
+        type="button"
+        // 항목을 누르면 모달이 열린다. 체크는 거기까지 올라가면 안 된다.
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggle();
+        }}
+        aria-label={label}
+        title={label}
+        className="absolute inset-0 grid cursor-pointer place-items-center opacity-0 transition group-hover/task:opacity-100"
+      >
+        <span
+          className={`grid ${boxClassName} place-items-center rounded-[5px] border transition ${
+            done ? "border-accent bg-accent" : "border-soft-deep bg-card"
+          }`}
+        >
+          {done && (
+            <svg
+              viewBox="0 0 24 24"
+              className="size-2.5 text-white"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3.5"
+            >
+              <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </span>
+      </button>
+    </span>
+  );
+}

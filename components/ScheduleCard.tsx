@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatTime, getDday, type DateKey } from "@/lib/date";
-import { TaskIcon } from "@/lib/icons";
+import { TaskCheck } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
 type TabId = "upcoming" | "overdue";
@@ -14,6 +14,11 @@ type Props = {
   overdue: Task[];
   today: DateKey;
   onSelect: (task: Task) => void;
+  /**
+   * 아이콘 자리의 체크박스. 여기 있는 것은 전부 미완료라, 체크하면 목록에서 빠진다
+   * ('할 일' 카드에서 완료 쪽으로 옮겨가는 것과 같다).
+   */
+  onToggleDone: (task: Task) => void;
 };
 
 function Tab({
@@ -50,7 +55,13 @@ function Tab({
   );
 }
 
-export default function ScheduleCard({ upcoming, overdue, today, onSelect }: Props) {
+export default function ScheduleCard({
+  upcoming,
+  overdue,
+  today,
+  onSelect,
+  onToggleDone,
+}: Props) {
   /**
    * 어느 탭을 보고 있는지. **오직 사용자가 누를 때만 바뀐다.**
    *
@@ -95,13 +106,24 @@ export default function ScheduleCard({ upcoming, overdue, today, onSelect }: Pro
 
             return (
               <li key={task.id} className="shrink-0">
-                <button
-                  type="button"
+                {/* 안에 체크박스 버튼이 들어가므로 항목 자체는 버튼이 될 수 없다. */}
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onSelect(task)}
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter" && e.key !== " ") return;
+                    e.preventDefault();
+                    onSelect(task);
+                  }}
                   title={task.memo ? `${task.title}\n${task.memo}` : task.title}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-[10px] bg-card px-3 py-2.5 text-left transition hover:bg-canvas"
+                  className="group/task flex w-full cursor-pointer items-center gap-2 rounded-[10px] bg-card px-3 py-2.5 text-left transition hover:bg-canvas"
                 >
-                  <TaskIcon icon={task.icon} />
+                  <TaskCheck
+                    icon={task.icon}
+                    done={task.is_done}
+                    onToggle={() => onToggleDone(task)}
+                  />
                   <span className={`truncate text-[13px] ${task.is_starred ? "marker" : ""}`}>
                     {task.title}
                   </span>
@@ -119,7 +141,7 @@ export default function ScheduleCard({ upcoming, overdue, today, onSelect }: Pro
                   >
                     {dday.label}
                   </span>
-                </button>
+                </div>
               </li>
             );
           })}

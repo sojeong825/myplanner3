@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import DatePicker from "@/components/DatePicker";
 import EmojiPicker from "@/components/EmojiPicker";
+import TimePicker from "@/components/TimePicker";
 import { autoIcon } from "@/lib/autoIcon";
 import { categoryName, type Category } from "@/lib/categories";
 import type { DateKey } from "@/lib/date";
@@ -231,24 +232,10 @@ export default function TaskModal({
 
             {/* 시간은 날짜를 고른 뒤에만 의미가 있다. 날짜 없는 시간은 언제인지 알 수 없다. */}
             {dates.length > 0 && (
-              <label className="mt-2 flex items-center gap-2">
+              <div className="mt-2 flex items-center gap-2">
                 <span className="shrink-0 text-[12px] text-ink-soft">시간</span>
-                <input
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  className="rounded-lg border border-line bg-canvas px-2.5 py-1.5 text-[13px] outline-none focus:border-accent"
-                />
-                {time && (
-                  <button
-                    type="button"
-                    onClick={() => setTime("")}
-                    className="text-[11px] text-ink-faint underline underline-offset-2 transition hover:text-ink-soft"
-                  >
-                    시간 없애기
-                  </button>
-                )}
-              </label>
+                <TimePicker value={time} onChange={setTime} />
+              </div>
             )}
           </div>
 

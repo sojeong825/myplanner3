@@ -1,7 +1,7 @@
 "use client";
 
 import { buildMonthGrid, formatTime, WEEKDAYS, type DateKey } from "@/lib/date";
-import { TaskIcon } from "@/lib/icons";
+import { TaskCheck } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
 type Props = {
@@ -12,6 +12,8 @@ type Props = {
   /** 빈 칸을 누르면 그 날짜로 '할 일 추가'가 바로 열린다(노션 달력과 같은 동작). */
   onAddOn: (key: DateKey) => void;
   onSelect: (task: Task) => void;
+  /** 아이콘 자리의 체크박스. 모달을 열지 않고 완료를 뒤집는다. */
+  onToggleDone: (task: Task) => void;
 };
 
 export default function MonthGrid({
@@ -21,6 +23,7 @@ export default function MonthGrid({
   tasksByDate,
   onAddOn,
   onSelect,
+  onToggleDone,
 }: Props) {
   const cells = buildMonthGrid(year, month);
 
@@ -90,20 +93,34 @@ export default function MonthGrid({
 
               <div className="flex min-h-0 flex-col gap-0.5 overflow-hidden">
                 {dayTasks.map((task) => (
-                  <button
+                  // 안에 체크박스 버튼이 들어가므로 항목 자체는 버튼이 될 수 없다.
+                  <div
                     key={task.id}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     // 일정을 눌렀을 때 칸 선택까지 함께 일어나면 무엇을 눌렀는지 모호해진다.
                     onClick={(e) => {
                       e.stopPropagation();
                       onSelect(task);
                     }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter" && e.key !== " ") return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onSelect(task);
+                    }}
                     title={task.title}
-                    className={`flex cursor-pointer items-center gap-1 rounded px-0.5 text-left text-[12px] leading-5 transition hover:bg-soft ${
+                    className={`group/task flex cursor-pointer items-center gap-1 rounded px-0.5 text-left text-[12px] leading-5 transition hover:bg-soft ${
                       task.is_done ? "text-ink-faint line-through" : "text-ink"
                     }`}
                   >
-                    <TaskIcon icon={task.icon} done={task.is_done} className="text-[12px]" />
+                    <TaskCheck
+                      icon={task.icon}
+                      done={task.is_done}
+                      onToggle={() => onToggleDone(task)}
+                      iconClassName="text-[12px]"
+                      boxClassName="size-3.5"
+                    />
                     {/* 시간은 제목보다 앞에 둔다. 달력에서는 '몇 시에'가 먼저 읽혀야 한다. */}
                     {task.due_time && !task.is_done && (
                       <span className="shrink-0 text-ink-soft">{formatTime(task.due_time)}</span>
@@ -116,7 +133,7 @@ export default function MonthGrid({
                     >
                       {task.title}
                     </span>
-                  </button>
+                  </div>
                 ))}
               </div>
             </div>

@@ -579,6 +579,7 @@ export default function Page() {
             onToday={() => setAnchor(todayKey())}
             onViewChange={(next) => void saveSetting({ calendar_view: next })}
             onSelect={openView}
+            onToggleDone={toggleTask}
             // 헤더 버튼은 날짜 없이 연다. 달력 칸을 눌러야 날짜가 붙는다.
             onAdd={() => openAdd(null)}
           />
@@ -599,6 +600,7 @@ export default function Page() {
               overdue={overdue}
               today={today}
               onSelect={openView}
+              onToggleDone={toggleTask}
             />
           )}
 

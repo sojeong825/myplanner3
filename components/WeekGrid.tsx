@@ -1,7 +1,7 @@
 "use client";
 
 import { buildWeek, formatTime, WEEKDAYS, type DateKey } from "@/lib/date";
-import { TaskIcon } from "@/lib/icons";
+import { TaskCheck } from "@/lib/icons";
 import type { Task } from "@/lib/types";
 
 type Props = {
@@ -11,6 +11,8 @@ type Props = {
   /** 빈 칸을 누르면 그 날짜로 '할 일 추가'가 바로 열린다. */
   onAddOn: (key: DateKey) => void;
   onSelect: (task: Task) => void;
+  /** 아이콘 자리의 체크박스. 모달을 열지 않고 완료를 뒤집는다. */
+  onToggleDone: (task: Task) => void;
 };
 
 /**
@@ -25,6 +27,7 @@ export default function WeekGrid({
   tasksByDate,
   onAddOn,
   onSelect,
+  onToggleDone,
 }: Props) {
   const days = buildWeek(anchor);
 
@@ -72,21 +75,34 @@ export default function WeekGrid({
 
             <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-1.5 pb-2">
               {dayTasks.map((task) => (
-                <button
+                // 안에 체크박스 버튼이 들어가므로 항목 자체는 버튼이 될 수 없다.
+                <div
                   key={task.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect(task);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter" && e.key !== " ") return;
+                    e.preventDefault();
                     e.stopPropagation();
                     onSelect(task);
                   }}
                   title={task.title}
                   // 항목은 흰 배경 + 여백만으로 구분한다. 완료는 텍스트만 흐리게.
-                  className={`flex cursor-pointer items-start gap-1.5 rounded-[10px] bg-card px-2 py-1.5 text-left text-[13px] leading-snug transition hover:bg-soft ${
+                  className={`group/task flex cursor-pointer items-start gap-1.5 rounded-[10px] bg-card px-2 py-1.5 text-left text-[13px] leading-snug transition hover:bg-soft ${
                     task.is_done ? "text-ink-faint line-through" : "text-ink"
                   }`}
                 >
                   {/* 여러 줄로 넘어가도 첫 줄에 맞춰 정렬 */}
-                  <TaskIcon icon={task.icon} done={task.is_done} className="mt-px text-[13px]" />
+                  <TaskCheck
+                    icon={task.icon}
+                    done={task.is_done}
+                    onToggle={() => onToggleDone(task)}
+                    iconClassName="mt-px text-[13px]"
+                  />
                   {/* 형광펜은 box-decoration-break: clone이라 줄이 넘어가도 줄마다 그어진다. */}
                   <span className="min-w-0">
                     {task.due_time && !task.is_done && (
@@ -100,7 +116,7 @@ export default function WeekGrid({
                       {task.title}
                     </span>
                   </span>
-                </button>
+                </div>
               ))}
             </div>
           </div>
