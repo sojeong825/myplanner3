@@ -283,8 +283,15 @@ export function TaskCheck({
         }}
         aria-label={label}
         title={label}
-        // 좁은 화면: 아이콘 옆에 그대로 놓인다. 넓은 화면: 아이콘 위에 겹쳐두고 hover 때만.
-        className="grid shrink-0 cursor-pointer place-items-center transition lg:absolute lg:inset-0 lg:opacity-0 lg:group-hover/task:opacity-100"
+        /*
+          좁은 화면: 아이콘 옆에 그대로 놓인다. 넓은 화면: 아이콘 위에 겹쳐두고 hover 때만.
+
+          넓은 화면에서 inset-0을 쓰지 않는 이유: 그러면 누를 수 있는 범위가 아이콘 글자
+          크기(달력에서는 15x12px)에 묶인다. 눈에 보이는 체크박스(14px)보다 작아서,
+          가장자리를 누르면 체크가 아니라 그 뒤의 항목이 눌려 상세 모달이 열린다.
+          보이는 것보다 넉넉한 20px 사각형을 아이콘 한가운데 겹쳐 둔다.
+        */
+        className="grid shrink-0 cursor-pointer place-items-center transition lg:absolute lg:left-1/2 lg:top-1/2 lg:size-5 lg:-translate-x-1/2 lg:-translate-y-1/2 lg:opacity-0 lg:group-hover/task:opacity-100"
       >
         <span
           className={`grid ${boxClassName} place-items-center rounded-[5px] border transition ${
