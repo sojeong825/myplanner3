@@ -30,6 +30,7 @@ import {
   migrateLocalToServer,
 } from "@/lib/store";
 import type { NewTask, Task } from "@/lib/types";
+import { clockSkewMs, clockWarning } from "@/lib/clockSkew";
 import { useAuth } from "@/lib/useAuth";
 import { useNotifications } from "@/lib/useNotifications";
 import { useSettings } from "@/lib/useSettings";
@@ -158,6 +159,8 @@ export default function Page() {
   const [mobileTab, setMobileTab] = useState<"calendar" | "tasks">("calendar");
   /** 폰 머리줄의 돋보기로 여는 검색. 넓은 화면에서는 본문에 늘 떠 있다. */
   const [searchOpen, setSearchOpen] = useState(false);
+  /** 기기 시계 경고를 닫았는지. 고치기 전에는 새로고침할 때마다 다시 뜬다. */
+  const [clockDismissed, setClockDismissed] = useState(false);
   /** 로그인했는데 서버에도 로컬에도 데이터가 있어 합칠지 물어야 하는 상태 */
   const [mergeCount, setMergeCount] = useState<number | null>(null);
 
@@ -169,6 +172,15 @@ export default function Page() {
     setToday(key);
     setAnchor(key);
   }, []);
+
+  /**
+   * 기기 시계가 어긋났는지. 로그인 토큰에 박힌 발급 시각(서버가 찍은 진짜 시각)과
+   * 이 기기의 시각을 견준다. 게스트에게는 토큰이 없어 알 길이 없다.
+   */
+  const clockWarn = useMemo(
+    () => (session ? clockWarning(clockSkewMs(session.access_token)) : null),
+    [session],
+  );
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -663,6 +675,23 @@ export default function Page() {
         {/* 아래 탭바에 가리지 않도록 폰에서만 아래 여백을 크게 준다. */}
         <main className="flex min-w-0 flex-1 flex-col gap-4 p-3 pb-24 lg:flex-row lg:items-start lg:gap-5 lg:p-6">
           <div className="flex min-w-0 flex-1 flex-col gap-4 lg:gap-5">
+            {/*
+              기기 시계 경고. 오류 띠보다 위에 둔다 — 시계가 어긋나면 그 아래 오류들은
+              대부분 그 결과물이라, 원인을 먼저 읽어야 한다.
+            */}
+            {clockWarn && !clockDismissed && (
+              <div className="flex items-start gap-3 rounded-card border border-soft-deep bg-soft px-4 py-3 text-[12px] leading-relaxed text-accent-deep">
+                <span className="min-w-0 flex-1 break-keep">{clockWarn}</span>
+                <button
+                  type="button"
+                  onClick={() => setClockDismissed(true)}
+                  className="shrink-0 underline underline-offset-2"
+                >
+                  닫기
+                </button>
+              </div>
+            )}
+
             {error && (
               <div className="flex items-center gap-3 rounded-card border border-soft-deep bg-soft px-4 py-3 text-[12px] text-accent-deep">
                 <span className="min-w-0 flex-1">{error}</span>

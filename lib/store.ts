@@ -6,6 +6,7 @@ import {
   SETTINGS_KEY,
   type Settings,
 } from "@/lib/settings";
+import { explainAuthError } from "@/lib/clockSkew";
 import { supabase } from "@/lib/supabase";
 import {
   coerceCategories,
@@ -47,7 +48,8 @@ const LOCAL_CATEGORIES_KEY = "my-planner:categories";
 const LOCAL_REFLECTIONS_KEY = "my-planner:reflections";
 
 function fail(message: string, error: { message: string }): never {
-  throw new Error(`${message}: ${error.message}`);
+  // 서버가 영어로 돌려주는 시계 관련 사고는 한국어 안내로 바꿔 띄운다.
+  throw new Error(`${message}: ${explainAuthError(error.message)}`);
 }
 
 /* ---------------------------------- 게스트 --------------------------------- */
