@@ -250,7 +250,6 @@ export default function MonthGrid({
                       done={task.is_done}
                       onToggle={() => onToggleDone(task)}
                       iconClassName="text-[12px]"
-                      boxClassName="size-3.5"
                     />
                     {/* 시간은 제목보다 앞에 둔다. 달력에서는 '몇 시에'가 먼저 읽혀야 한다. */}
                     {task.due_time && !task.is_done && (
