@@ -10,6 +10,7 @@ import {
 } from "@/lib/date";
 import { TaskCheck } from "@/lib/icons";
 import { chipColor } from "@/lib/taskChip";
+import { useState } from "react";
 import { DESKTOP, useMediaQuery } from "@/lib/useMediaQuery";
 import type { Task } from "@/lib/types";
 
@@ -30,6 +31,8 @@ type Props = {
   onSelectDay: (key: DateKey) => void;
   /** 지금 고른 날. 좁은 화면에서 그 칸을 채워 표시한다. */
   selected: DateKey;
+  /** 한 칸 안에서 끌어다 놓은 새 순서(그 칸 전체의 id를 차례대로). */
+  onReorder: (ids: number[]) => void;
 };
 
 export default function MonthGrid({
@@ -42,6 +45,7 @@ export default function MonthGrid({
   onToggleDone,
   onSelectDay,
   selected,
+  onReorder,
 }: Props) {
   const cells = buildMonthGrid(year, month);
   /**
@@ -53,6 +57,25 @@ export default function MonthGrid({
 
   /** 오늘이 무슨 요일인지. 요일 머리글에서 그 칸만 또렷하게 둔다(애플 캘린더와 같다). */
   const todayWeekday = weekdayOf(today);
+
+  /**
+   * 끌고 있는 일정. 같은 칸 안에서만 옮길 수 있어서 날짜도 함께 들고 있는다.
+   *
+   * dataTransfer에 담지 않고 state로 두는 이유: dragover에서 '받을 수 있는 자리인지'를
+   * 판단해야 하는데, 그 순간에는 dataTransfer를 읽을 수 없다(보안상 drop에서만 열린다).
+   */
+  const [dragging, setDragging] = useState<{ id: number; key: DateKey } | null>(null);
+
+  /** 끌던 것을 target 자리에 끼워 넣은 새 순서. */
+  const dropOn = (dayTasks: Task[], targetId: number) => {
+    if (!dragging || dragging.id === targetId) return;
+    const ids = dayTasks.map((t) => t.id);
+    const from = ids.indexOf(dragging.id);
+    const to = ids.indexOf(targetId);
+    if (from < 0 || to < 0) return;
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    onReorder(ids);
+  };
 
   return (
     <>
@@ -180,6 +203,32 @@ export default function MonthGrid({
                     key={task.id}
                     role="button"
                     tabIndex={0}
+                    /*
+                      끌어서 같은 칸 안의 순서를 바꾼다. 다른 날짜 칸으로는 받지 않는다 —
+                      날짜를 옮기는 것은 수정 모달이 할 일이고, 끌다가 손이 미끄러져
+                      마감일이 바뀌면 되돌리기가 번거롭다.
+
+                      손가락에는 이 동작이 없다. 좁은 화면에서는 이 줄 자체가 나오지 않는다.
+                    */
+                    draggable
+                    onDragStart={(e) => {
+                      e.stopPropagation();
+                      e.dataTransfer.effectAllowed = "move";
+                      setDragging({ id: task.id, key: cell.key });
+                    }}
+                    onDragEnd={() => setDragging(null)}
+                    onDragOver={(e) => {
+                      if (!dragging || dragging.key !== cell.key || dragging.id === task.id) return;
+                      // preventDefault를 해야 이 자리가 '놓을 수 있는 곳'이 된다.
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      dropOn(dayTasks, task.id);
+                      setDragging(null);
+                    }}
                     // 일정을 눌렀을 때 칸 선택까지 함께 일어나면 무엇을 눌렀는지 모호해진다.
                     onClick={(e) => {
                       e.stopPropagation();
@@ -194,7 +243,7 @@ export default function MonthGrid({
                     title={task.title}
                     className={`group/task flex cursor-pointer items-center gap-1 rounded px-0.5 text-left text-[12px] leading-5 transition hover:bg-soft ${
                       task.is_done ? "text-ink-faint line-through" : "text-ink"
-                    }`}
+                    } ${dragging?.id === task.id ? "opacity-40" : ""}`}
                   >
                     <TaskCheck
                       icon={task.icon}

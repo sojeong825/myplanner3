@@ -25,6 +25,13 @@ export type Task = {
   category_id: number | null;
   /** 특별 일정 표시. 목록 최상단으로 올라가고 달력에서도 강조된다. */
   is_starred: boolean;
+  /**
+   * 달력 한 칸 안에서 손으로 정한 순서. null이면 아직 손대지 않은 것이다.
+   *
+   * 끌어서 옮긴 날은 그날 일정 전부에 0,1,2…가 채워진다. 그러지 않고 옮긴 것만
+   * 번호를 주면 나머지와 견줄 기준이 없어 순서가 들쭉날쭉해진다.
+   */
+  sort_order: number | null;
 };
 
 /** 새 Task 저장 시 사용자가 채우는 값. 나머지는 DB 기본값. */
@@ -43,7 +50,7 @@ export type NewTask = {
 
 /** select에서 쓰는 컬럼 목록 — 한 곳에서만 관리한다. */
 export const TASK_COLUMNS =
-  "id, title, due_date, due_time, is_done, created_at, icon, icon_color, memo, category_id, is_starred";
+  "id, title, due_date, due_time, is_done, created_at, icon, icon_color, memo, category_id, is_starred, sort_order";
 
 /**
  * 어디서 읽었든 Task를 같은 모양으로 맞춘다.
@@ -77,6 +84,7 @@ export function coerceTask(raw: unknown): Task | null {
     memo: typeof v.memo === "string" && v.memo.length > 0 ? v.memo : null,
     category_id: typeof v.category_id === "number" ? v.category_id : null,
     is_starred: v.is_starred === true,
+    sort_order: typeof v.sort_order === "number" ? v.sort_order : null,
   };
 }
 

@@ -1,5 +1,5 @@
 -- ============================================================
---  my planner 업데이트 SQL  (0005 ~ 0014 한 번에)
+--  my planner 업데이트 SQL  (0005 ~ 0015 한 번에)
 --
 --  ▶ 이 파일 전체를 복사해서 Supabase SQL Editor에 붙여넣고 Run 하세요.
 --
@@ -338,7 +338,22 @@ alter table public.settings
 
 
 -- ============================================================
---  12. 확인 — 아래 표가 전부 ✅ 면 성공입니다
+--  12. 달력 칸 안에서 손으로 정한 순서  (0015)
+--
+--  지금까지 한 날짜 안의 순서는 자동이었다(별표 먼저 → 이른 시간 → 먼저 만든 것).
+--  끌어서 옮길 수 있게 되면서, 손으로 정한 순서가 있으면 그게 자동 규칙을 이긴다.
+--  null은 아직 손대지 않았다는 뜻이다.
+-- ============================================================
+
+alter table public.tasks
+  add column if not exists sort_order integer;
+
+comment on column public.tasks.sort_order is
+  '달력 한 칸 안에서 손으로 정한 순서. null이면 자동 정렬을 따른다.';
+
+
+-- ============================================================
+--  13. 확인 — 아래 표가 전부 ✅ 면 성공입니다
 -- ============================================================
 
 with check_list(순서, 항목, 통과) as (
@@ -386,6 +401,10 @@ with check_list(순서, 항목, 통과) as (
   select 11, '달력 보기에 일간이 허용된다', exists (
     select 1 from information_schema.check_constraints
     where constraint_name = 'settings_view_check' and check_clause like '%day%')
+  union all
+  select 12, 'tasks.sort_order 칸이 생겼다', exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'tasks' and column_name = 'sort_order')
 )
 select 항목, case when 통과 then '✅ 완료' else '❌ 실패' end as 결과
 from check_list

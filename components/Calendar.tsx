@@ -33,6 +33,8 @@ type Props = {
   onSelectDay: (key: DateKey) => void;
   /** 날짜 없이 여는 추가. 넓은 화면에만 있는 버튼이다. */
   onAdd: () => void;
+  /** 달력 한 칸 안에서 끌어다 놓은 새 순서(그 칸 전체의 id를 차례대로). */
+  onReorder: (ids: number[]) => void;
 };
 
 function ArrowButton({
@@ -107,6 +109,7 @@ export default function Calendar({
   onToggleDone,
   onSelectDay,
   onAdd,
+  onReorder,
 }: Props) {
   const { y, m } = keyParts(anchor);
   const title = view === "month" ? formatMonthTitle(y, m) : formatWeekTitle(anchor);
@@ -201,6 +204,7 @@ export default function Calendar({
           onToggleDone={onToggleDone}
           onSelectDay={selectDay}
           selected={anchor}
+          onReorder={onReorder}
         />
       ) : (
         <WeekGrid

@@ -77,6 +77,22 @@ const byDueAsc = (a: Task, b: Task) =>
 const byDueDesc = (a: Task, b: Task) =>
   a.due_date === b.due_date ? byDueThenCreated(a, b) : a.due_date! < b.due_date! ? 1 : -1;
 
+/**
+ * 손으로 정한 순서가 있으면 그게 자동 규칙을 이긴다.
+ *
+ * 한쪽만 번호가 있으면 번호 있는 쪽이 앞이다 — 끌어다 놓은 것이 위로 올라오는 게
+ * 자연스럽다. 둘 다 없으면 넘겨받은 자동 규칙(별표 먼저 → 이른 시간 → 먼저 만든 것)
+ * 을 그대로 쓴다.
+ */
+function manualFirst(cmp: (a: Task, b: Task) => number) {
+  return (a: Task, b: Task) => {
+    if (a.sort_order !== null && b.sort_order !== null) return a.sort_order - b.sort_order;
+    if (a.sort_order !== null) return -1;
+    if (b.sort_order !== null) return 1;
+    return cmp(a, b);
+  };
+}
+
 const message = (e: unknown, fallback: string) =>
   e instanceof Error ? e.message : fallback;
 
@@ -401,6 +417,29 @@ export default function Page() {
     [update],
   );
 
+  /**
+   * 달력 한 칸 안에서 끌어다 놓은 결과를 저장한다. 넘겨준 차례가 곧 새 순서다.
+   * 완료·별표와 같은 방식 — 먼저 화면을 바꾸고, 실패하면 되돌린다.
+   */
+  const reorderDay = useCallback(
+    async (ids: number[]) => {
+      setError(null);
+      const before = tasks;
+      const rank = new Map(ids.map((id, i) => [id, i]));
+      setTasks((prev) =>
+        prev.map((t) => (rank.has(t.id) ? { ...t, sort_order: rank.get(t.id)! } : t)),
+      );
+
+      try {
+        await store.reorderDay(ids);
+      } catch (e) {
+        setTasks(before);
+        setError(message(e, "순서를 바꾸지 못했어요."));
+      }
+    },
+    [store, tasks],
+  );
+
   /** 별표는 완료와 같은 방식 — 먼저 화면을 바꾸고, 실패하면 되돌린다. */
   const toggleStar = useCallback(
     async (task: Task) => {
@@ -487,7 +526,8 @@ export default function Page() {
       if (bucket) bucket.push(task);
       else map.set(task.due_date, [task]);
     }
-    for (const bucket of map.values()) bucket.sort(starredFirst(byDueThenCreated));
+    // 달력 칸 안에서만 손으로 정한 순서를 쓴다. 다른 목록은 자동 규칙 그대로다.
+    for (const bucket of map.values()) bucket.sort(manualFirst(starredFirst(byDueThenCreated)));
     return map;
   }, [visible]);
 
@@ -780,6 +820,7 @@ export default function Page() {
                 onToggleDone={toggleTask}
                 // 폰에서 고른 날. 달력 아래 목록이 이 날짜 것으로 바뀐다.
                 onSelectDay={setAnchor}
+                onReorder={reorderDay}
                 // 날짜 없이 여는 추가. 달력 칸을 누르면 그 날짜가 붙는다.
                 onAdd={() => openAdd(null)}
               />

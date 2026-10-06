@@ -31,6 +31,13 @@ export type Store = {
   setDone(id: number, done: boolean): Promise<void>;
   /** 별표는 수정 모달을 거치지 않고 목록에서 바로 켜고 끄므로 setDone처럼 따로 둔다. */
   setStarred(id: number, starred: boolean): Promise<void>;
+  /**
+   * 달력 한 칸 안의 순서를 통째로 다시 매긴다. 넘겨준 차례대로 0,1,2…가 된다.
+   *
+   * 옮긴 것 하나만 번호를 주지 않는 이유: 나머지는 번호가 없어서 견줄 기준이 없다.
+   * 그날 것 전부를 한 번에 채워야 순서가 흔들리지 않는다.
+   */
+  reorderDay(ids: number[]): Promise<void>;
   removeTask(id: number): Promise<void>;
   listCategories(): Promise<Category[]>;
   addCategory(draft: NewCategory): Promise<Category>;
@@ -146,6 +153,8 @@ const guestStore: Store = {
       memo: draft.memo,
       category_id: draft.category_id,
       is_starred: draft.is_starred,
+      // 새로 만든 것은 아직 손으로 옮긴 적이 없다 — 자동 정렬을 따른다.
+      sort_order: null,
     }));
 
     writeLocalTasks([...created.slice().reverse(), ...tasks]);
@@ -167,6 +176,15 @@ const guestStore: Store = {
   async setStarred(id, starred) {
     writeLocalTasks(
       readLocalTasks().map((t) => (t.id === id ? { ...t, is_starred: starred } : t)),
+    );
+  },
+
+  async reorderDay(ids) {
+    const rank = new Map(ids.map((id, i) => [id, i]));
+    writeLocalTasks(
+      readLocalTasks().map((t) =>
+        rank.has(t.id) ? { ...t, sort_order: rank.get(t.id)! } : t,
+      ),
     );
   },
 
@@ -275,6 +293,18 @@ function createServerStore(userId: string): Store {
         .update({ is_starred: starred })
         .eq("id", id);
       if (error) fail("별표를 바꾸지 못했어요", error);
+    },
+
+    async reorderDay(ids) {
+      // 한 칸에 들어가는 개수는 많아야 열 몇 개라, 한 줄씩 보내도 충분히 빠르다.
+      // upsert를 쓰지 않는 이유 — 그쪽은 NOT NULL 칸을 전부 채워 보내야 한다.
+      const results = await Promise.all(
+        ids.map((id, i) =>
+          supabase.from("tasks").update({ sort_order: i }).eq("id", id),
+        ),
+      );
+      const failed = results.find((r) => r.error);
+      if (failed?.error) fail("순서를 바꾸지 못했어요", failed.error);
     },
 
     async removeTask(id) {
